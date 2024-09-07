@@ -1,7 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { HeaderAuth } from "./_components/header-auth";
-import { TextHoverEffect } from "@/components/glow/text-hover-effect";
 
 const AuthLayout = async ({ children }: { children: React.ReactNode }) => {
   const supabase = createClient();

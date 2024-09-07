@@ -5,16 +5,16 @@ import { createClient } from "@/lib/supabase/client"; // Botón para agregar cue
 import AddEmailAccount from "./_components/add-email-account";
 import { DataTable } from "./_components/data-table/data-table";
 import { columns } from "./_components/data-table/columns";
+import { Database } from "@/database.types";
 
 const supabase = createClient();
 const SetupPage = () => {
-  const [emailAccounts, setEmailAccounts] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [emailAccounts, setEmailAccounts] = useState<
+    Database["public"]["Tables"]["email_accounts"]["Row"][]
+  >([]);
 
   useEffect(() => {
     const fetchEmailAccounts = async () => {
-      setLoading(true);
-
       // Obtén el usuario autenticado actual
       const {
         data: { user },
@@ -23,7 +23,6 @@ const SetupPage = () => {
       // Si no hay un usuario autenticado, retorna vacío
       if (!user) {
         setEmailAccounts([]);
-        setLoading(false);
         return;
       }
 
@@ -31,7 +30,8 @@ const SetupPage = () => {
       const { data, error } = await supabase
         .from("email_accounts")
         .select("email, status")
-        .eq("user_id", user.id);
+        .eq("user_id", user.id)
+        .returns<Database["public"]["Tables"]["email_accounts"]["Row"][]>();
 
       console.log(data);
 
@@ -40,8 +40,6 @@ const SetupPage = () => {
       } else {
         setEmailAccounts(data || []);
       }
-
-      setLoading(false);
     };
 
     fetchEmailAccounts();

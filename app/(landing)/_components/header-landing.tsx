@@ -2,8 +2,9 @@ import { Button } from "@/components/ui/button";
 import { LogoMailBase } from "@/components/ui/vector/logos";
 import { ArrowRight } from "lucide-react";
 import Link from "next/link";
+import { User } from "@supabase/supabase-js";
 
-export const HeaderLanding = ({ user }: { user: any | null }) => {
+export const HeaderLanding = ({ user }: { user: User | null }) => {
   return (
     <header className="w-full h-14 min-h-14 shrink-0 items-center justify-between px-5 md:px-7 lg:px-14 xl:px-36 2xl:px-48 py-3 flex border-b">
       <Link

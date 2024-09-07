@@ -39,6 +39,8 @@ export async function GET(req: Request) {
       })
       .eq("email", email)
       .eq("user_id", userId);
+
+    if (updateError) return NextResponse.json({ error: updateError.message });
     return NextResponse.redirect(`http://localhost:3000/setup?success=true`);
   } catch (error) {
     return NextResponse.redirect(

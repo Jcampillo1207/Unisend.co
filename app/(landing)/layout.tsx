@@ -7,6 +7,7 @@ const LandingLayout = async ({ children }: { children: React.ReactNode }) => {
   const {
     data: { user },
   } = await supabase.auth.getUser();
+  
   return (
     <main>
       <HeaderLanding user={user} />
