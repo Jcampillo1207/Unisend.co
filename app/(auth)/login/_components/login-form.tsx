@@ -24,8 +24,6 @@ export const LoginForm = () => {
   const [viewPassword, setViewPassword] = useState<"password" | "text">(
     "password"
   );
-  const [open, setOpen] = useState(false);
-
   const form = useForm<z.infer<typeof loginschema>>({
     resolver: zodResolver(loginschema),
     resetOptions: {
@@ -53,7 +51,6 @@ export const LoginForm = () => {
     }
   }
 
-  console.log(open);
 
   return (
     <div className="w-full max-w-lg p-5 lg:p-7 rounded-xl border bg-muted">
