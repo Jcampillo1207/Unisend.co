@@ -157,13 +157,16 @@ export const MessageRender: React.FC<MessageRenderProps> = ({
 
       {/* Renderizar el cuerpo del correo */}
       <div className={`text-base ${showPlainText && "prose"} ${bodyClassName}`}>
-        {showPlainText && hasTextBody ? (
+        {showPlainText ? (
+          // Mostrar el cuerpo de texto plano
+          hasTextBody &&
           data.textBody.split("\n\n").map((paragraph, index) => (
             <p key={index} className="mb-4 whitespace-pre-wrap">
               {linkify(paragraph)}
             </p>
           ))
-        ) : hasHtmlBody ? (
+        ) : // Mostrar HTML si está disponible
+        hasHtmlBody ? (
           <div className="w-full h-fit">
             <ShadowContent html={data.htmlBody} />
           </div>

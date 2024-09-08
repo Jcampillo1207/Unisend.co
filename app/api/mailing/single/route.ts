@@ -1,4 +1,4 @@
-import { getGmailClient } from "@/lib/gmail-client"; // Agregada la importación correcta
+import { getGmailClient } from "@/lib/gmail-client";
 import { createAdminClient } from "@/lib/supabase/server-role";
 import { NextResponse } from "next/server";
 import { Base64 } from "js-base64";
@@ -25,22 +25,19 @@ async function getMessageDetails(gmailClient: any, messageId: string) {
     headers.find((header: any) => header.name === "Subject")?.value ||
     "Sin Asunto";
 
-  // Inicializar variables para texto y HTML
+  // Buscar las partes que contienen texto plano y HTML
   let textBody = "";
   let htmlBody = "";
   let attachments: any[] = [];
   let inlineImages: any[] = [];
 
-  // Función para procesar las partes del correo
   function processParts(parts: any[]) {
     parts.forEach((part: any) => {
-      if (part.mimeType === "text/plain" && !textBody) {
-        // Solo asignar si textBody no tiene contenido
+      if (part.mimeType === "text/plain") {
         textBody = part.body.data
           ? Buffer.from(part.body.data, "base64").toString("utf-8")
           : "Sin contenido";
-      } else if (part.mimeType === "text/html" && !htmlBody) {
-        // Solo asignar si htmlBody no tiene contenido
+      } else if (part.mimeType === "text/html") {
         htmlBody = part.body.data
           ? Buffer.from(part.body.data, "base64").toString("utf-8")
           : "";
