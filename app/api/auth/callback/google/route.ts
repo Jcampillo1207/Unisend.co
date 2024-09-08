@@ -1,4 +1,3 @@
-// app/api/auth/google/callback/route.ts
 import { getAccessToken } from "@/lib/google/google-auth";
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/server-role";
@@ -20,31 +19,38 @@ export async function GET(req: Request) {
     // Obtener el token de acceso y el email de la cuenta conectada
     const { email, access_token, refresh_token } = await getAccessToken(code);
 
-    // Guardar la cuenta de Gmail conectada en la base de datos de Supabase
-    const { error } = await supabase.from("email_accounts").insert({
-      user_id: userId, // Asocia la cuenta con el ID del usuario
-      email,
-      access_token,
-      refresh_token,
-      status: "DECLINED",
-    });
-
-    if (error) return NextResponse.json({ error: error.message });
-
-    // Si la cuenta de Gmail se conectó con éxito, redirige al usuario de vuelta a la página de configuración
-    const { error: updateError } = await supabase
+    // Verificar cuántas cuentas de correo ya están conectadas para este usuario
+    const { data: existingAccounts, error: existingError } = await supabase
       .from("email_accounts")
-      .update({
-        status: "VERIFIED",
-      })
-      .eq("email", email)
+      .select("*")
       .eq("user_id", userId);
 
-    if (updateError) return NextResponse.json({ error: updateError.message });
+    if (existingError) {
+      return NextResponse.json({ error: existingError.message });
+    }
+
+    // Si no hay cuentas, esta cuenta será la principal
+    const isFirstAccount = existingAccounts.length === 0;
+
+    // Insertar la nueva cuenta de Gmail conectada
+    const { error: insertError } = await supabase
+      .from("email_accounts")
+      .insert({
+        user_id: userId,
+        email,
+        access_token,
+        refresh_token,
+        status: "VERIFIED",
+        principal: isFirstAccount, // Solo será principal si es la primera cuenta conectada
+      });
+
+    if (insertError) return NextResponse.json({ error: insertError.message });
+
+    // Si la cuenta de Gmail se conectó con éxito, redirige al usuario de vuelta a la página de configuración
     return NextResponse.redirect(`http://localhost:3000/setup?success=true`);
-  } catch (error) {
+  } catch (error: any) {
     return NextResponse.redirect(
-      `http://localhost:3000/setup?success=false&message=${error}`
+      `http://localhost:3000/setup?success=false&message=${error.message}`
     );
   }
 }

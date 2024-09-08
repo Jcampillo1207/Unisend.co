@@ -9,8 +9,9 @@ const oAuth2Client = new google.auth.OAuth2(
 
 export function getAuthUrl(userId: string) {
   const scopes = [
-    "https://www.googleapis.com/auth/gmail.readonly",
     "https://www.googleapis.com/auth/gmail.send",
+    "https://www.googleapis.com/auth/gmail.modify",
+    "https://www.googleapis.com/auth/gmail.labels",
   ];
 
   // Generar la URL de autorización de Google, incluyendo el user_id en la URL de redirección

@@ -15,6 +15,7 @@ export type Database = {
           created_at: string
           email: string
           id: number
+          principal: boolean | null
           refresh_token: string
           status: Database["public"]["Enums"]["email_status_types"]
           user_id: string | null
@@ -24,6 +25,7 @@ export type Database = {
           created_at?: string
           email: string
           id?: number
+          principal?: boolean | null
           refresh_token: string
           status?: Database["public"]["Enums"]["email_status_types"]
           user_id?: string | null
@@ -33,6 +35,7 @@ export type Database = {
           created_at?: string
           email?: string
           id?: number
+          principal?: boolean | null
           refresh_token?: string
           status?: Database["public"]["Enums"]["email_status_types"]
           user_id?: string | null

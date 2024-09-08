@@ -29,8 +29,9 @@ const SetupPage = () => {
       // Obtén las cuentas de correo asociadas a este usuario
       const { data, error } = await supabase
         .from("email_accounts")
-        .select("email, status")
+        .select("email, status, principal, user_id")
         .eq("user_id", user.id)
+        .order("principal", { ascending: false })
         .returns<Database["public"]["Tables"]["email_accounts"]["Row"][]>();
 
       console.log(data);
@@ -42,7 +43,23 @@ const SetupPage = () => {
       }
     };
 
+    const channels = supabase
+      .channel("custom-all-channel")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "email_accounts" },
+        (payload) => {
+          fetchEmailAccounts();
+          console.log(payload);
+        }
+      )
+      .subscribe();
+
     fetchEmailAccounts();
+
+    return () => {
+      supabase.removeChannel(channels);
+    };
   }, []);
 
   return (

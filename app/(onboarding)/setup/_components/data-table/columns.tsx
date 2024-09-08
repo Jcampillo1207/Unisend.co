@@ -2,24 +2,16 @@
 
 import { Badge } from "@/components/ui/badge";
 import { ColumnDef } from "@tanstack/react-table";
-
-import { MoreHorizontal } from "lucide-react";
-
-import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { ActionsMenu } from "./actions-menu";
+import { Database } from "@/database.types";
 
 // This type is used to define the shape of our data.
 // You can use a Zod schema here if you want.
 export type Payment = {
-  email: string;
-  status: "DECLINED" | "VERIFIED";
+  email: Database["public"]["Tables"]["email_accounts"]["Row"]["email"];
+  status: Database["public"]["Tables"]["email_accounts"]["Row"]["status"];
+  principal: Database["public"]["Tables"]["email_accounts"]["Row"]["principal"];
+  user_id: Database["public"]["Tables"]["email_accounts"]["Row"]["user_id"];
 };
 
 export const columns: ColumnDef<Payment>[] = [
@@ -58,23 +50,35 @@ export const columns: ColumnDef<Payment>[] = [
     },
   },
   {
-    id: "actions",
-    cell: () => {
+    accessorKey: "principal",
+    header: () => {
+      return <div></div>;
+    },
+    cell: ({ getValue }) => {
       return (
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="h-8 w-8 p-0">
-              <span className="sr-only">Open menu</span>
-              <MoreHorizontal className="h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuLabel>Actions</DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem>View customer</DropdownMenuItem>
-            <DropdownMenuItem>View payment details</DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        <div>
+          {getValue() === true && (
+            <Badge
+              className="rounded-full bg-primary/20 text-primary hover:bg-primary/20"
+              variant={"default"}
+            >
+              Principal
+            </Badge>
+          )}
+        </div>
+      );
+    },
+  },
+  {
+    id: "actions",
+    cell: (cell) => {
+      const email = cell.row.original.email;
+      const principal = cell.row.original.principal;
+      const user_id = cell.row.original.user_id;
+
+      console.log(email);
+      return (
+        <ActionsMenu user_id={user_id} email={email} principal={principal} />
       );
     },
   },
