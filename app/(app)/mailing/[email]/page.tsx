@@ -1,7 +1,7 @@
-
 import { createClient } from "@/lib/supabase/server";
 import { MessageRender } from "./_components/message-render";
 import { HeaderEmail } from "./_components/header-email";
+import { redirect } from "next/navigation";
 
 // Este componente se ejecuta en el servidor
 const EmailPage = async ({
@@ -18,12 +18,18 @@ const EmailPage = async ({
   } = await supabase.auth.getUser();
 
   if (!user) {
+    redirect("/login");
+  }
+
+  if (!email) {
     return (
       <div>
         <h1>Error al obtener los detalles del correo</h1>
       </div>
     );
   }
+
+  console.log(email);
   // Realizar la consulta al servidor (backend API)
   const response = await fetch(
     `https://unisend.co/api/mailing/single?userid=${user.id}&email=${email}&messageId=${emailId}`
