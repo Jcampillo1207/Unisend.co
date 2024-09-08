@@ -11,6 +11,7 @@ const EmailPage = async ({
   params: { email: string };
   searchParams: { email: string };
 }) => {
+  console.log(emailId, email);
   const supabase = createClient();
 
   const {
@@ -24,7 +25,7 @@ const EmailPage = async ({
   if (!email) {
     return (
       <div>
-        <h1>Error al obtener los detalles del correo</h1>
+        <h1>No encontramos tu dirección de correo electrónico</h1>
       </div>
     );
   }
