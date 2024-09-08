@@ -2,49 +2,58 @@ import { getGmailClient } from "@/lib/gmail-client";
 import { refreshAccessToken } from "@/lib/refrsh-access-token";
 import { createAdminClient } from "@/lib/supabase/server-role";
 import { NextResponse } from "next/server";
+import { gmail_v1 } from "googleapis";
 
 interface EmailAccount {
   access_token: string;
   refresh_token: string;
 }
 
-// Función para obtener el contenido y detalles de un correo
-async function getMessageDetails(gmailClient: any, messageId: string) {
+interface MessageDetails {
+  id: string;
+  from: string;
+  subject: string;
+  date: string | null;
+  body: string;
+  isUnread: boolean;
+}
+
+// Function to get the content and details of an email
+async function getMessageDetails(
+  gmailClient: gmail_v1.Gmail,
+  messageId: string
+): Promise<MessageDetails> {
   const response = await gmailClient.users.messages.get({
     userId: "me",
     id: messageId,
     format: "full",
   });
 
-  const payload = response.data.payload;
-  const headers = payload.headers;
+  const payload = response.data.payload!;
+  const headers = payload.headers!;
   const labelIds = response.data.labelIds || [];
   const dateHeader =
-    headers.find((header: any) => header.name === "Date")?.value || null;
+    headers.find((header) => header.name === "Date")?.value || null;
 
   const from =
-    headers.find((header: any) => header.name === "From")?.value ||
-    "Desconocido";
+    headers.find((header) => header.name === "From")?.value || "Desconocido";
   const subject =
-    headers.find((header: any) => header.name === "Subject")?.value ||
-    "Sin Asunto";
+    headers.find((header) => header.name === "Subject")?.value || "Sin Asunto";
 
   const body =
-    payload?.parts?.find((part: any) => part.mimeType === "text/plain")?.body
-      ?.data || "Sin contenido";
+    payload.parts?.find((part) => part.mimeType === "text/plain")?.body?.data ||
+    "Sin contenido";
 
-  // Determinar si el mensaje está marcado como no leído
+  // Determine if the message is marked as unread
   const isUnread = labelIds.includes("UNREAD");
-
-  // console.log(payload)
 
   return {
     id: messageId,
     from,
     subject,
     date: dateHeader,
-    body: Buffer.from(body, "base64").toString("utf-8"), // Decodificar el contenido de base64
-    isUnread, // Agregamos el estado de lectura al objeto retornado
+    body: Buffer.from(body, "base64").toString("utf-8"), // Decode content from base64
+    isUnread,
   };
 }
 
@@ -53,7 +62,7 @@ export async function GET(req: Request) {
   const url = new URL(req.url);
   const userId = url.searchParams.get("userid");
   const email = url.searchParams.get("email");
-  const pageToken = url.searchParams.get("pageToken"); // Token para la paginación
+  const pageToken = url.searchParams.get("pageToken"); // Token for pagination
 
   if (!userId) {
     return NextResponse.json(
@@ -79,7 +88,7 @@ export async function GET(req: Request) {
   let gmailClient = getGmailClient(emailAccount.access_token);
 
   try {
-    // Añadir el `pageToken` a la solicitud de mensajes para obtener la siguiente página si es necesario
+    // Add the `pageToken` to the message request to get the next page if necessary
     const response = await gmailClient.users.messages.list({
       userId: "me",
       maxResults: 20,
@@ -96,12 +105,12 @@ export async function GET(req: Request) {
     }
 
     const detailedMessages = await Promise.all(
-      messages.map((message: any) => getMessageDetails(gmailClient, message.id))
+      messages.map((message) => getMessageDetails(gmailClient, message.id!))
     );
 
-    // Devolver los mensajes y el nextPageToken para la siguiente solicitud
+    // Return messages and nextPageToken for the next request
     return NextResponse.json({ messages: detailedMessages, nextPageToken });
-  } catch (error: any) {
+  } catch (error) {
     console.error("Error al listar correos:", error);
     return NextResponse.json(
       { error: "Error al listar correos" },

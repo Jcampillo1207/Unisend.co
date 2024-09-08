@@ -207,7 +207,7 @@ export const AsideMailing = ({ user_id }: { user_id: string }) => {
             </div>
           ))}
           {loadingMore && (
-            <div className="w-full items-center justify-center flex pb-5">
+            <div className="w-full items-center justify-center flex py-5">
               <Loader className="size-4 animate-spin" />
             </div>
           )}

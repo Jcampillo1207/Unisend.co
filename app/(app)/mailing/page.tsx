@@ -3,7 +3,7 @@ const MailingPage = ({
 }: {
   searchParams: { email_id: string };
 }) => {
-  return <div className="w-full h-full items-start justify-start">hola</div>;
+  return <div className="w-full h-full items-start justify-start">{email_id}</div>;
 };
 
 export default MailingPage;

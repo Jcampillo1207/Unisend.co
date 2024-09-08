@@ -26,7 +26,7 @@ const EmailPage = async ({
   }
   // Realizar la consulta al servidor (backend API)
   const response = await fetch(
-    `http://localhost:3000/api/mailing/single?userid=${user.id}&email=${email}&messageId=${emailId}`
+    `https://unisend.co/api/mailing/single?userid=${user.id}&email=${email}&messageId=${emailId}`
   );
 
   if (!response.ok) {
