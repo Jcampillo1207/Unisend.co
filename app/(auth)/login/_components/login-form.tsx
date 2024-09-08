@@ -18,6 +18,8 @@ import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { LoginUser } from "@/actions/auth-actions";
 import { useRouter } from "next/navigation";
+import { createClient } from "@/lib/supabase/client";
+const supabase = createClient();
 
 export const LoginForm = () => {
   const router = useRouter();
@@ -45,12 +47,22 @@ export const LoginForm = () => {
       toast.dismiss();
       toast.error(error.message);
     } else {
-      console.log(data);
-      toast.dismiss();
-      router.replace("/mailing");
+      const { data: principalData, error: principalError } = await supabase
+        .from("email_accounts")
+        .select("*")
+        .eq("principal", true)
+        .eq("user_id", data.user.id)
+        .single();
+
+      if (principalError) {
+        toast.dismiss();
+        toast.error(principalError.message);
+      } else {
+        toast.dismiss();
+        router.replace(`/mailing?email=${principalData.email}`);
+      }
     }
   }
-
 
   return (
     <div className="w-full max-w-lg p-5 lg:p-7 rounded-xl border bg-muted">
