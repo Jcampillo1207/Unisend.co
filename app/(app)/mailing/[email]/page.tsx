@@ -9,13 +9,13 @@ const EmailPage = async ({
   searchParams,
 }: {
   params: { email: string };
-  searchParams: { email: string; sender: string };
+  searchParams: { emailroute: string; sender: string };
 }) => {
   console.log("params:", params);
   console.log("searchParams:", searchParams);
 
   const emailId = params.email; // Esto será '191d3acaf691f1b7'
-  const email = searchParams.email as string;
+  const email = searchParams.emailroute as string;
   const sender = searchParams.sender as string;
 
   console.log(emailId, email, sender);

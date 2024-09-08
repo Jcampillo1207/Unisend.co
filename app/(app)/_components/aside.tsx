@@ -144,7 +144,7 @@ export const AsideMailing = ({ user_id }: { user_id: string }) => {
               onClick={() => {
                 markEmailAsReadInUI(email.id); // Marcar como leído en la UI
                 router.push(
-                  `/mailing/${email.id}?email=${emailParam}&sender=${email.from}`
+                  `/mailing/${email.id}?emailroute=${emailParam}&sender=${email.from}`
                 );
               }}
               key={key}
