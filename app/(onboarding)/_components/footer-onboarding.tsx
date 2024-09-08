@@ -53,7 +53,7 @@ export const FooterOnboarding = ({
     if (error) {
       console.error(error);
     } else {
-      router.push(`mailing?email=${data.email}`);
+      router.push(`mailing?emailroute=${data.email}`);
     }
   }
 

@@ -59,7 +59,7 @@ export const LoginForm = () => {
         toast.error(principalError.message);
       } else {
         toast.dismiss();
-        router.replace(`/mailing?email=${principalData.email}`);
+        router.replace(`/mailing?emailroute=${principalData.email}`);
       }
     }
   }

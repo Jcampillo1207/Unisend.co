@@ -30,7 +30,7 @@ export const AsideMailing = ({ user_id }: { user_id: string }) => {
 
   const activePath = pathname?.split("/").pop();
 
-  const emailParam = useSearchParams().get("email");
+  const emailParam = useSearchParams().get("emailroute");
   const containerRef = useRef<HTMLDivElement>(null); // Referencia al contenedor de scroll
 
   const fetchEmails = async (pageToken?: string) => {
