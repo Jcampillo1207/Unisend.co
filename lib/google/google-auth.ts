@@ -1,15 +1,14 @@
 // lib/google-auth.ts
-import { google, gmail_v1 } from "googleapis";
-import { OAuth2Client, Credentials } from "google-auth-library";
+import { google } from "googleapis";
 
-const oAuth2Client: OAuth2Client = new google.auth.OAuth2(
+const oAuth2Client = new google.auth.OAuth2(
   process.env.GMAIL_CLIENT_ID,
   process.env.GMAIL_CLIENT_SECRET,
-  "https://unisend.co/api/auth/callback/google" // URL de redirección para tu app
+  "http://localhost:3000/api/auth/callback/google" // URL de redirección para tu app
 );
 
-export function getAuthUrl(userId: string): string {
-  const scopes: string[] = [
+export function getAuthUrl(userId: string) {
+  const scopes = [
     "https://www.googleapis.com/auth/gmail.send",
     "https://www.googleapis.com/auth/gmail.modify",
     "https://www.googleapis.com/auth/gmail.labels",
@@ -23,28 +22,19 @@ export function getAuthUrl(userId: string): string {
   });
 }
 
-export async function getAccessToken(code: string): Promise<{
-  email: string;
-  access_token: string | null;
-  refresh_token: string | null;
-}> {
+export async function getAccessToken(code: string) {
   try {
-    const { tokens }: { tokens: Credentials } = await oAuth2Client.getToken(
-      code
-    );
+    const { tokens } = await oAuth2Client.getToken(code);
     oAuth2Client.setCredentials(tokens);
 
     // Obtener el perfil del usuario (email)
-    const gmail: gmail_v1.Gmail = google.gmail({
-      version: "v1",
-      auth: oAuth2Client,
-    });
+    const gmail = google.gmail({ version: "v1", auth: oAuth2Client });
     const profile = await gmail.users.getProfile({ userId: "me" });
 
     return {
-      email: profile.data.emailAddress ?? "",
-      access_token: tokens.access_token ?? null,
-      refresh_token: tokens.refresh_token ?? null,
+      email: profile.data.emailAddress,
+      access_token: tokens.access_token,
+      refresh_token: tokens.refresh_token,
     };
   } catch (error) {
     console.error("Error al obtener el token de acceso:", error);
