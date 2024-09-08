@@ -9,9 +9,14 @@ const EmailPage = async ({
   searchParams,
 }: {
   params: { email: string };
-  searchParams: { [key: string]: string | string[] | undefined };
+  searchParams: { email: string };
 }) => {
-  const email = searchParams.email as string;
+  const email = searchParams.email;
+
+  console.log("searchParams:", searchParams);
+  console.log("emailId:", emailId);
+  console.log("email:", email);
+  
   const supabase = createClient();
 
   const {
@@ -21,6 +26,8 @@ const EmailPage = async ({
   if (!user) {
     redirect("/login");
   }
+
+  console.log(email, emailId);
 
   if (!email) {
     return (
