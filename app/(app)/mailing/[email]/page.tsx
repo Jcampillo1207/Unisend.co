@@ -5,18 +5,21 @@ import { redirect } from "next/navigation";
 
 // Este componente se ejecuta en el servidor
 const EmailPage = async ({
-  params: { email: emailId },
+  params,
   searchParams,
 }: {
   params: { email: string };
-  searchParams: { email: string };
+  searchParams: { email: string; sender: string };
 }) => {
-  const email = searchParams.email;
-
+  console.log("params:", params);
   console.log("searchParams:", searchParams);
-  console.log("emailId:", emailId);
-  console.log("email:", email);
-  
+
+  const emailId = params.email; // Esto será '191d3acaf691f1b7'
+  const email = searchParams.email as string;
+  const sender = searchParams.sender as string;
+
+  console.log(emailId, email, sender);
+
   const supabase = createClient();
 
   const {
