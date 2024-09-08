@@ -1,4 +1,4 @@
-import { getGmailClient } from "@/lib/gmail-client";
+import { getGmailClient } from "@/lib/gmail-client"; // Agregada la importación correcta
 import { createAdminClient } from "@/lib/supabase/server-role";
 import { NextResponse } from "next/server";
 import { Base64 } from "js-base64";

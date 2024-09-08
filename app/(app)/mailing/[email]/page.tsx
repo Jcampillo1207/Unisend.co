@@ -6,12 +6,12 @@ import { redirect } from "next/navigation";
 // Este componente se ejecuta en el servidor
 const EmailPage = async ({
   params: { email: emailId },
-  searchParams: { email },
+  searchParams,
 }: {
   params: { email: string };
-  searchParams: { email: string };
+  searchParams: { [key: string]: string | string[] | undefined };
 }) => {
-  console.log(emailId, email);
+  const email = searchParams.email as string;
   const supabase = createClient();
 
   const {
