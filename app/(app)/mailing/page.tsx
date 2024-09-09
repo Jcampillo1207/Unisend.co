@@ -66,7 +66,7 @@ const MailingPage = ({
       if (body) {
         setLoading(true);
         try {
-          const response = await fetch("/api/ai/anhropic-email-writter", {
+          const response = await fetch("/api/ai/email-writter", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
