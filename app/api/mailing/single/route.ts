@@ -4,6 +4,75 @@ import { NextResponse } from "next/server";
 import { Base64 } from "js-base64";
 import { refreshAccessToken } from "@/lib/refrsh-access-token";
 
+function processParts(payload: any) {
+  let textBody = "";
+  let htmlBody = "";
+  const inlineImages: any[] = [];
+  const attachments: any[] = [];
+
+  function processPartRecursive(part: any) {
+    console.log("Processing part:", part.mimeType);
+
+    if (part.mimeType === "text/plain") {
+      textBody += decodeContent(part.body.data);
+    } else if (part.mimeType === "text/html") {
+      htmlBody += decodeContent(part.body.data);
+    } else if (part.mimeType.startsWith("image/")) {
+      inlineImages.push({
+        filename: part.filename,
+        mimeType: part.mimeType,
+        contentId: part.headers?.find(
+          (header: any) => header.name.toLowerCase() === "content-id"
+        )?.value,
+        data: part.body.attachmentId || part.body.data,
+      });
+    } else if (part.filename && part.body.attachmentId) {
+      attachments.push({
+        filename: part.filename,
+        mimeType: part.mimeType,
+        attachmentId: part.body.attachmentId,
+      });
+    }
+
+    if (part.parts && Array.isArray(part.parts)) {
+      part.parts.forEach(processPartRecursive);
+    }
+  }
+
+  function decodeContent(data: string): string {
+    if (!data) return "";
+    try {
+      return Buffer.from(data, "base64").toString("utf-8");
+    } catch (error) {
+      console.error("Error decoding content:", error);
+      return "";
+    }
+  }
+
+  console.log("Processing payload:", payload);
+
+  if (payload.body && payload.body.data) {
+    if (payload.mimeType === "text/html") {
+      htmlBody = decodeContent(payload.body.data);
+    } else if (payload.mimeType === "text/plain") {
+      textBody = decodeContent(payload.body.data);
+    }
+  }
+
+  if (payload.parts && Array.isArray(payload.parts)) {
+    payload.parts.forEach(processPartRecursive);
+  } else {
+    processPartRecursive(payload);
+  }
+
+  console.log("Processed content:", {
+    textBody: textBody.substring(0, 100),
+    htmlBody: htmlBody.substring(0, 100),
+  });
+
+  return { textBody, htmlBody, inlineImages, attachments };
+}
+
 // Función para obtener el contenido y detalles de un correo, incluyendo HTML e imágenes embebidas
 async function getMessageDetails(gmailClient: any, messageId: string) {
   const response = await gmailClient.users.messages.get({
@@ -15,8 +84,6 @@ async function getMessageDetails(gmailClient: any, messageId: string) {
   const payload = response.data.payload;
   const headers = payload.headers;
   const labelIds = response.data.labelIds || [];
-  const dateHeader =
-    headers.find((header: any) => header.name === "Date")?.value || null;
 
   const from =
     headers.find((header: any) => header.name === "From")?.value ||
@@ -24,60 +91,14 @@ async function getMessageDetails(gmailClient: any, messageId: string) {
   const subject =
     headers.find((header: any) => header.name === "Subject")?.value ||
     "Sin Asunto";
+  const dateHeader =
+    headers.find((header: any) => header.name === "Date")?.value || null;
 
-  // Buscar las partes que contienen texto plano y HTML
-  let textBody = "";
-  let htmlBody = "";
-  let attachments: any[] = [];
-  let inlineImages: any[] = [];
+  console.log("Message payload:", payload);
 
-  function processParts(parts: any[]) {
-    parts.forEach((part: any) => {
-      if (part.mimeType === "text/plain") {
-        textBody = part.body.data
-          ? Buffer.from(part.body.data, "base64").toString("utf-8")
-          : "Sin contenido";
-      } else if (part.mimeType === "text/html") {
-        htmlBody = part.body.data
-          ? Buffer.from(part.body.data, "base64").toString("utf-8")
-          : "";
-      } else if (part.mimeType.startsWith("image/")) {
-        // Manejo de imágenes embebidas (inline) en el correo
-        inlineImages.push({
-          filename: part.filename,
-          mimeType: part.mimeType,
-          contentId: part.headers.find(
-            (header: any) => header.name === "Content-ID"
-          )?.value,
-          data: part.body.attachmentId
-            ? part.body.attachmentId
-            : Base64.decode(part.body.data),
-        });
-      } else if (part.filename && part.body.attachmentId) {
-        // Manejo de archivos adjuntos
-        attachments.push({
-          filename: part.filename,
-          mimeType: part.mimeType,
-          attachmentId: part.body.attachmentId,
-        });
-      } else if (part.parts) {
-        // Si el correo tiene partes anidadas, procesarlas también
-        processParts(part.parts);
-      }
-    });
-  }
+  const { textBody, htmlBody, inlineImages, attachments } =
+    processParts(payload);
 
-  // Procesar las partes del correo
-  if (payload.parts) {
-    processParts(payload.parts);
-  } else {
-    // Si no hay partes (correo simple), procesar el cuerpo directamente
-    textBody = payload.body.data
-      ? Buffer.from(payload.body.data, "base64").toString("utf-8")
-      : "Sin contenido";
-  }
-
-  // Determinar si el mensaje está marcado como no leído
   const isUnread = labelIds.includes("UNREAD");
 
   return {
@@ -87,8 +108,8 @@ async function getMessageDetails(gmailClient: any, messageId: string) {
     date: dateHeader,
     textBody,
     htmlBody,
-    inlineImages, // Imágenes embebidas
-    attachments, // Archivos adjuntos
+    inlineImages,
+    attachments,
     isUnread,
   };
 }

@@ -1,217 +1,131 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
+import DOMPurify from "dompurify";
 import { format } from "date-fns";
-import Link from "next/link";
-import { Button } from "@/components/ui/button";
-import ShadowContent from "./shadow-content";
+import { es } from "date-fns/locale";
 
-// Tipos
-type InlineImage = {
-  filename: string;
-  mimeType: string;
-  contentId: string;
-  data: string;
-};
+const EmailRenderer = ({ emailData }) => {
+  const [showHtml, setShowHtml] = useState(true);
+  const [sanitizedHtml, setSanitizedHtml] = useState("");
+  const [iframeHeight, setIframeHeight] = useState("0px");
+  const iframeRef = useRef(null);
 
-type Attachment = {
-  filename: string;
-  mimeType: string;
-  attachmentId: string;
-};
+  useEffect(() => {
+    if (emailData.htmlBody) {
+      const clean = DOMPurify.sanitize(emailData.htmlBody, {
+        ADD_TAGS: ["style", "link"],
+        ADD_ATTR: ["target", "rel"],
+        FORBID_TAGS: ["script", "iframe"],
+        FORBID_ATTR: ["onerror", "onload", "onclick"],
+      });
+      setSanitizedHtml(clean);
+    }
+  }, [emailData.htmlBody]);
 
-type MessageData = {
-  id: string;
-  from: string;
-  subject: string;
-  date: string;
-  textBody: string;
-  htmlBody: string;
-  inlineImages: InlineImage[];
-  attachments: Attachment[];
-  isUnread: boolean;
-};
+  console.log(sanitizedHtml);
 
-type MessageRenderProps = {
-  data: MessageData | null;
-  className?: string; // Clase para el contenedor principal
-  titleClassName?: string; // Clase para el título del mensaje
-  fromClassName?: string; // Clase para la línea de "De"
-  dateClassName?: string; // Clase para la línea de la fecha
-  bodyClassName?: string; // Clase para el cuerpo del mensaje
-  inlineImageClassName?: string; // Clase para las imágenes embebidas
-  attachmentClassName?: string; // Clase para los adjuntos
-};
+  useEffect(() => {
+    if (iframeRef.current) {
+      const iframeDocument = iframeRef.current.contentDocument;
+      iframeDocument.open();
+      iframeDocument.write(sanitizedHtml);
+      iframeDocument.close();
 
-// Componente para renderizar enlaces con clase personalizada
-const CustomLink: React.FC<{
-  href: string;
-  children: React.ReactNode;
-  className?: string;
-}> = ({ href, children, className = "" }) => (
-  <Link
-    href={href}
-    className={`text-primary hover:underline break-all ${className}`}
-    target="_blank"
-    rel="noopener noreferrer"
-  >
-    {children}
-  </Link>
-);
+      const resizeIframe = () => {
+        const height = iframeDocument.documentElement.scrollHeight;
+        setIframeHeight(`${height}px`);
+      };
 
-// Función para convertir URLs en texto plano a enlaces clicables
-const linkify = (text: string, linkClassName?: string): React.ReactNode[] => {
-  const urlRegex = /(https?:\/\/[^\s]+)/g;
-  const parts = text.split(urlRegex);
+      // Resize on load
+      if (iframeDocument.readyState === "complete") {
+        resizeIframe();
+      } else {
+        iframeDocument.addEventListener("load", resizeIframe);
+      }
 
-  return parts.map((part, index) =>
-    part.match(urlRegex) ? (
-      <CustomLink key={index} href={part} className={linkClassName}>
-        {part}
-      </CustomLink>
-    ) : (
-      part
-    )
-  );
-};
+      // Resize on window resize
+      window.addEventListener("resize", resizeIframe);
 
-// Componente para mostrar imágenes embebidas con clase personalizada
-const InlineImage: React.FC<{ image: InlineImage; className?: string }> = ({
-  image,
-  className = "",
-}) => (
-  <img
-    src={`data:${image.mimeType};base64,${image.data}`}
-    alt={image.filename}
-    className={`inline-image ${className}`}
-  />
-);
+      // MutationObserver to watch for dynamic content changes
+      const observer = new MutationObserver(resizeIframe);
+      observer.observe(iframeDocument.body, { childList: true, subtree: true });
 
-// Componente para mostrar adjuntos con clase personalizada
-const AttachmentLink: React.FC<{
-  attachment: Attachment;
-  className?: string;
-}> = ({ attachment, className = "" }) => (
-  <a
-    href={`/attachments/${attachment.attachmentId}`} // Debes manejar la descarga de archivos por ID
-    className={`text-primary hover:underline ${className}`}
-    download={attachment.filename}
-  >
-    {attachment.filename}
-  </a>
-);
+      // Fallback: check size periodically for a short time after initial load
+      let checkCount = 0;
+      const intervalId = setInterval(() => {
+        resizeIframe();
+        checkCount++;
+        if (checkCount > 10) clearInterval(intervalId);
+      }, 100);
 
-// Componente principal
-export const MessageRender: React.FC<MessageRenderProps> = ({
-  data,
-  className = "",
-  titleClassName = "",
-  fromClassName = "",
-  dateClassName = "",
-  bodyClassName = "",
-  inlineImageClassName = "",
-  attachmentClassName = "",
-}) => {
-  const [showPlainText, setShowPlainText] = useState(false);
+      return () => {
+        window.removeEventListener("resize", resizeIframe);
+        observer.disconnect();
+        clearInterval(intervalId);
+      };
+    }
+  }, [sanitizedHtml]);
 
-  if (!data) {
-    return null;
-  }
 
-  // Verificar si tenemos HTML disponible
-  const hasHtmlBody = data.htmlBody && data.htmlBody.trim().length > 0;
-  const hasTextBody = data.textBody && data.textBody.trim().length > 0;
+  const renderTextBody = () => {
+    return emailData.textBody.split("\n").map((line, index) => (
+      <p key={index} className="mb-2">
+        {line}
+      </p>
+    ));
+  };
+
+  const renderAttachments = () => {
+    return emailData.attachments.map((attachment, index) => (
+      <div key={index} className="">
+        <a
+          href={`/api/attachment/${attachment.id}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-blue-500 hover:underline"
+        >
+          {attachment.filename}
+        </a>
+      </div>
+    ));
+  };
 
   return (
-    <div
-      className={`items-start justify-start flex flex-col w-full relative ${className}`}
-    >
-      <div className="w-full h-fit items-start justify-start flex flex-col gap-y-0.5 lg:gap-y-1 xl:gap-y-1.5 px-5 md:px-7 lg:px-14 py-5 lg:py-7 xl:py-10 border-b bg-muted">
-        {(data.subject && (
-          <h1
-            className={`text-2xl font-bold text-foreground ${titleClassName}`}
-          >
-            {data.subject}
-          </h1>
-        )) || (
-          <h1
-            className={`text-2xl font-bold text-foreground ${titleClassName}`}
-          >
-            Sin asunto
-          </h1>
-        )}
-        <p className={`text-sm text-muted-foreground ${fromClassName}`}>
-          De: {data.from}
+    <div className="w-full flex-1">
+      <div className="w-full bg-muted/60 border-b p-5 md:px-7">
+        <h2 className="text-2xl font-bold">{emailData.subject}</h2>
+        <p className="text-sm text-muted-foreground">{emailData.from}</p>
+        <p className="text-sm text-muted-foreground">
+          {format(new Date(emailData.date), "PPpp", { locale: es })}
         </p>
-        <p className={`text-sm text-muted-foreground ${dateClassName}`}>
-          Fecha: {format(new Date(data.date), "dd/MM/yyyy HH:mm")}
-        </p>
-        <div className="w-full h-fit items-center justify-between flex">
-          {hasHtmlBody && hasTextBody && (
-            <Button onClick={() => setShowPlainText((prev) => !prev)}>
-              {showPlainText ? "Ver HTML" : "Ver Texto Plano"}
-            </Button>
-          )}
-        </div>
       </div>
 
-      {/* Renderizar el cuerpo del correo */}
-      <div className={`text-base ${showPlainText && "prose"} ${bodyClassName}`}>
-        {showPlainText ? (
-          // Mostrar el cuerpo de texto plano
-          hasTextBody &&
-          data.textBody.split("\n\n").map((paragraph, index) => (
-            <p key={index} className="mb-4 whitespace-pre-wrap">
-              {linkify(paragraph)}
-            </p>
-          ))
-        ) : // Mostrar HTML si está disponible
-        hasHtmlBody ? (
-          <div className="w-full h-fit">
-            <ShadowContent html={data.htmlBody} />
-          </div>
+      <div className="w-full flex-1 mx-auto max-w-xl lg:max-w-2xl">
+        {showHtml && emailData.htmlBody ? (
+          <iframe
+            ref={iframeRef}
+            title="Email Content"
+            className="w-full border-none h-fit"
+            style={{
+              height: iframeHeight,
+              overflow: "hidden",
+            }}
+            sandbox="allow-scripts allow-same-origin"
+          />
         ) : (
-          hasTextBody &&
-          data.textBody.split("\n\n").map((paragraph, index) => (
-            <p key={index} className="mb-4 whitespace-pre-wrap">
-              {linkify(paragraph)}
-            </p>
-          ))
+          <div className="text-content p-5">{renderTextBody()}</div>
         )}
       </div>
 
-      {/* Renderizar imágenes embebidas */}
-      {data.inlineImages.length > 0 && (
-        <div className={`inline-images mt-4 ${inlineImageClassName}`}>
-          <h2 className="text-lg font-semibold mb-2">Imágenes embebidas:</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {data.inlineImages.map((image, index) => (
-              <InlineImage
-                key={index}
-                image={image}
-                className={inlineImageClassName}
-              />
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Renderizar archivos adjuntos */}
-      {data.attachments.length > 0 && (
-        <div className={`attachments mt-4 ${attachmentClassName}`}>
-          <h2 className="text-lg font-semibold mb-2">Archivos adjuntos:</h2>
-          <ul>
-            {data.attachments.map((attachment, index) => (
-              <li key={index}>
-                <AttachmentLink
-                  attachment={attachment}
-                  className={attachmentClassName}
-                />
-              </li>
-            ))}
-          </ul>
+      {emailData.attachments && emailData.attachments.length > 0 && (
+        <div className="email-attachments p-5">
+          <h3 className="text-lg font-semibold mb-2">Attachments:</h3>
+          {renderAttachments()}
         </div>
       )}
     </div>
   );
 };
+
+export default EmailRenderer;

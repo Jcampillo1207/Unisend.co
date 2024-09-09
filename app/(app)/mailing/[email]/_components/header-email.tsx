@@ -1,10 +1,10 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { Reply } from "lucide-react";
+import { ArrowLeft, ArrowRight, Reply } from "lucide-react";
 import React, { useState } from "react";
 import { ReplyDialog } from "./dialogs/dialog-reply";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 
 export const HeaderEmail = ({
   emailId,
@@ -15,18 +15,35 @@ export const HeaderEmail = ({
 }) => {
   const [openReply, setOpenReply] = useState(false);
   const param = useSearchParams().get("sender") as string;
+  const router = useRouter();
+
 
   return (
     <>
-      <div className="w-full h-14 items-center justify-between flex px-5 md:px-7 lg:px-14 border-b bg-background shrink-0 min-h-14 sticky top-0 left-0 z-10">
-        <div className="w-fit h-full flex items-center justify-start">
-          Acciones
+      <div className="w-full h-14 items-center justify-between flex px-4 border-b bg-background shrink-0 min-h-14 sticky top-0 left-0 z-10">
+        <div className="w-fit h-full flex items-center justify-start gap-x-0.5">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="text-muted-foreground hover:text-foreground rounded-lg"
+            onClick={() => router.back()}
+          >
+            <ArrowLeft className="size-3" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="text-muted-foreground hover:text-foreground rounded-lg"
+            onClick={() => router.forward()}
+          >
+            <ArrowRight className="size-3" />
+          </Button>
         </div>
         <div className="w-fit h-full items-center justify-center flex gap-x-1.5">
           <Button
             variant={"default"}
             size={"sm"}
-            className="flex items-center justify-start gap-x-1.5"
+            className="flex items-center justify-start gap-x-1.5 rounded-lg"
             onClick={() => setOpenReply(true)}
           >
             Responder

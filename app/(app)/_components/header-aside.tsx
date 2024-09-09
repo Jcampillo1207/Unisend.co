@@ -1,4 +1,6 @@
+import { Button } from "@/components/ui/button";
 import { LogoMailBase } from "@/components/ui/vector/logos";
+import { RefreshCcw } from "lucide-react";
 import Link from "next/link";
 
 export const HeaderAside = () => {
@@ -12,6 +14,16 @@ export const HeaderAside = () => {
           <LogoMailBase className="h-5 w-auto" />
           <h1 className="text-xl font-bold">Unisend.co</h1>
         </Link>
+      </div>
+      <div className="w-fit items-center justify-end flex gap-x-1.5 h-full">
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => location.reload()}
+          className="rounded-lg text-muted-foreground hover:text-foreground"
+        >
+          <RefreshCcw className="size-3.5" />
+        </Button>
       </div>
     </header>
   );

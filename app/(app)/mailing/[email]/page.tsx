@@ -1,7 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
-import { MessageRender } from "./_components/message-render";
 import { HeaderEmail } from "./_components/header-email";
 import { redirect } from "next/navigation";
+import MessageRender from "./_components/message-render";
 
 // Este componente se ejecuta en el servidor
 const EmailPage = async ({
@@ -9,16 +9,13 @@ const EmailPage = async ({
   searchParams,
 }: {
   params: { email: string };
-  searchParams: { emailroute: string; sender: string };
+  searchParams: { emailroute: string; sender: string; category: string };
 }) => {
-  console.log("params:", params);
-  console.log("searchParams:", searchParams);
 
   const emailId = params.email; // Esto será '191d3acaf691f1b7'
   const email = searchParams.emailroute as string;
   const sender = searchParams.sender as string;
 
-  console.log(emailId, email, sender);
 
   const supabase = createClient();
 
@@ -30,7 +27,6 @@ const EmailPage = async ({
     redirect("/login");
   }
 
-  console.log(email, emailId);
 
   if (!email) {
     return (
@@ -40,7 +36,6 @@ const EmailPage = async ({
     );
   }
 
-  console.log(email);
   // Realizar la consulta al servidor (backend API)
   const response = await fetch(
     `https://unisend.co/api/mailing/single?userid=${user.id}&email=${email}&messageId=${emailId}`
@@ -56,14 +51,13 @@ const EmailPage = async ({
 
   const { message } = await response.json();
 
+  console.log(message)
+
+
   return (
     <section className="w-full h-dvh min-h-dvh max-h-dvh overflow-x-hidden overflow-y-scroll flex flex-col items-start justify-start bg-muted/50 relative">
       <HeaderEmail userId={user.id} emailId={emailId} />
-      <MessageRender
-        bodyClassName="w-full bg-transparent mx-auto"
-        titleClassName="py-0"
-        data={message}
-      />
+      <MessageRender emailData={message} />
     </section>
   );
 };

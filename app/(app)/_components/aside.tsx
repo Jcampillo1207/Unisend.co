@@ -3,7 +3,7 @@
 import { useEffect, useState, useRef } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Loader } from "lucide-react";
+import { Loader, MailX } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { formatDate } from "date-fns";
 import { es } from "date-fns/locale";
@@ -17,6 +17,7 @@ export interface Email {
   snippet: string;
   date: string;
   isUnread: boolean; // Nuevo campo para indicar si no ha sido leído
+  category: string;
 }
 
 export const AsideMailing = ({ user_id }: { user_id: string }) => {
@@ -29,6 +30,7 @@ export const AsideMailing = ({ user_id }: { user_id: string }) => {
   const pathname = usePathname();
 
   const activePath = pathname?.split("/").pop();
+  const categoryParam = useSearchParams().get("category");
 
   const emailParam = useSearchParams().get("emailroute");
   const containerRef = useRef<HTMLDivElement>(null); // Referencia al contenedor de scroll
@@ -72,6 +74,8 @@ export const AsideMailing = ({ user_id }: { user_id: string }) => {
   // Efecto para cargar los correos inicialmente
   useEffect(() => {
     if (emailParam) {
+      // Limpiar los correos antes de hacer una nueva solicitud
+      setEmails([]);
       fetchEmails();
     }
   }, [emailParam]);
@@ -105,6 +109,21 @@ export const AsideMailing = ({ user_id }: { user_id: string }) => {
     };
   }, [nextPageToken, loadingMore]); // Solo volver a añadir el evento si el token cambia o se está cargando más
 
+  const centerSelectedEmail = (emailId: string) => {
+    const emailElement = document.getElementById(`email-${emailId}`);
+    if (emailElement && containerRef.current) {
+      const containerHeight = containerRef.current.clientHeight;
+      const emailTop = emailElement.offsetTop;
+      const emailHeight = emailElement.clientHeight;
+      const scrollTop = emailTop - containerHeight / 2 + emailHeight / 2;
+
+      containerRef.current.scrollTo({
+        top: scrollTop,
+        behavior: "smooth",
+      });
+    }
+  };
+
   if (loading && emails.length === 0) {
     return (
       <aside
@@ -125,15 +144,26 @@ export const AsideMailing = ({ user_id }: { user_id: string }) => {
   }
 
   if (error) {
-    return <p>Error: {error}</p>;
+    return (
+      <aside className="w-full border-r items-start justify-start max-w-sm flex flex-col relative h-dvh min-h-dvh max-h-dvh overflow-x-hidden overflow-y-scroll no-scrollbar shrink-0">
+        <HeaderAside />
+        <div className="w-full h-auto items-center justify-center p-5 flex-1 flex flex-col gap-y-3 px-4">
+          <div className="w-fit h-fit aspect-square p-2.5 rounded-xl border border-destructive bg-destructive/20">
+            <MailX className="size-6 text-destructive" />
+          </div>
+          <p className="text-center text-sm antialiased text-muted-foreground">
+            Hubo un error inesperado,
+            <br /> intenta refrescar la página.
+          </p>
+        </div>
+      </aside>
+    );
   }
-
-  console.log(emails);
 
   return (
     <aside
       ref={containerRef}
-      className="w-full border-r items-start justify-start max-w-sm flex flex-col relative h-dvh min-h-dvh max-h-dvh overflow-x-hidden overflow-y-scroll no-scrollbar shrink-0"
+      className="w-full border-r items-start justify-start max-w-sm flex flex-col relative h-dvh min-h-dvh max-h-dvh overflow-x-hidden overflow-y-scroll no-scrollbar shrink-0 snap-y snap-mandatory"
     >
       <HeaderAside />
 
@@ -142,15 +172,17 @@ export const AsideMailing = ({ user_id }: { user_id: string }) => {
           {emails.map((email: Email, key: number) => (
             <div
               onClick={() => {
-                markEmailAsReadInUI(email.id); // Marcar como leído en la UI
+                markEmailAsReadInUI(email.id);
                 router.push(
-                  `/mailing/${email.id}?emailroute=${emailParam}&sender=${email.from}`
+                  `/mailing/${email.id}?emailroute=${emailParam}&sender=${email.from}&category=${email.category}`
                 );
+                centerSelectedEmail(email.id);
               }}
+              id={`email-${email.id}`}
               key={key}
               role="button"
               className={cn(
-                "px-4 py-2.5 border-t hover:bg-muted cursor-pointer transition-all flex gap-x-2.5",
+                "px-4 py-2.5 border-t hover:bg-muted cursor-pointer transition-all flex gap-x-2.5 snap-end",
                 key === 0 && "border-t-0",
                 email.isUnread && "bg-muted/50",
                 activePath == email.id && "bg-primary/30 hover:bg-primary/40"
@@ -207,7 +239,7 @@ export const AsideMailing = ({ user_id }: { user_id: string }) => {
             </div>
           ))}
           {loadingMore && (
-            <div className="w-full items-center justify-center flex py-5">
+            <div className="w-full items-center justify-center flex py-5 snap-end">
               <Loader className="size-4 animate-spin" />
             </div>
           )}
