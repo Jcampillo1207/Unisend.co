@@ -36,7 +36,7 @@ export async function GET(request: NextRequest) {
       token_hash,
     });
 
-    console.log({ data, error });
+    ;
 
     if (!error) {
       redirectTo.pathname = `/welcome`;

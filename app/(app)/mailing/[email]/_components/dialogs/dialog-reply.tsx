@@ -87,7 +87,7 @@ export const ReplyDialog = ({
     }
   };
 
-  console.log(replyBody);
+  ;
 
   // Manejo de archivos adjuntos
   const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {

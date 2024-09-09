@@ -34,7 +34,7 @@ const SetupPage = () => {
         .order("principal", { ascending: false })
         .returns<Database["public"]["Tables"]["email_accounts"]["Row"][]>();
 
-      console.log(data);
+      ;
 
       if (error) {
         console.error("Error al obtener cuentas de correo:", error);
@@ -50,7 +50,7 @@ const SetupPage = () => {
         { event: "*", schema: "public", table: "email_accounts" },
         (payload) => {
           fetchEmailAccounts();
-          console.log(payload);
+          ;
         }
       )
       .subscribe();

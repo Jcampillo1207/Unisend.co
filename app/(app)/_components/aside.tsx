@@ -32,6 +32,8 @@ export const AsideMailing = ({ user_id }: { user_id: string }) => {
   const activePath = pathname?.split("/").pop();
   const categoryParam = useSearchParams().get("category");
 
+  ;
+
   const emailParam = useSearchParams().get("emailroute");
   const containerRef = useRef<HTMLDivElement>(null); // Referencia al contenedor de scroll
 
@@ -41,7 +43,7 @@ export const AsideMailing = ({ user_id }: { user_id: string }) => {
       setLoadingMore(pageToken ? true : false); // Solo mostrar "Cargando más" cuando sea paginación
 
       const response = await fetch(
-        `/api/mailing/list?userid=${user_id}&email=${emailParam}${
+        `/api/mailing/list?userid=${user_id}&email=${emailParam}&category=${categoryParam}${
           pageToken ? `&pageToken=${pageToken}` : ""
         }`
       );
@@ -78,7 +80,7 @@ export const AsideMailing = ({ user_id }: { user_id: string }) => {
       setEmails([]);
       fetchEmails();
     }
-  }, [emailParam]);
+  }, [emailParam, categoryParam]);
 
   // Función para detectar cuando el usuario llega al final del scroll
   const handleScroll = () => {
@@ -160,10 +162,12 @@ export const AsideMailing = ({ user_id }: { user_id: string }) => {
     );
   }
 
+  ;
+
   return (
     <aside
       ref={containerRef}
-      className="w-full border-r items-start justify-start max-w-sm flex flex-col relative h-dvh min-h-dvh max-h-dvh overflow-x-hidden overflow-y-scroll no-scrollbar shrink-0 snap-y snap-mandatory"
+      className={cn("w-full border-r items-start justify-start max-w-sm flex flex-col relative h-dvh min-h-dvh max-h-dvh overflow-x-hidden overflow-y-scroll shrink-0 snap-y snap-mandatory scroll-smooth no-scrollbar")}
     >
       <HeaderAside />
 
@@ -174,7 +178,7 @@ export const AsideMailing = ({ user_id }: { user_id: string }) => {
               onClick={() => {
                 markEmailAsReadInUI(email.id);
                 router.push(
-                  `/mailing/${email.id}?emailroute=${emailParam}&sender=${email.from}&category=${email.category}`
+                  `/mailing/${email.id}?emailroute=${emailParam}&sender=${email.from}&category=${categoryParam}`
                 );
                 centerSelectedEmail(email.id);
               }}
@@ -245,7 +249,14 @@ export const AsideMailing = ({ user_id }: { user_id: string }) => {
           )}
         </div>
       ) : (
-        <p>No hay correos disponibles.</p>
+        <div className="w-full h-fit items-start justify-start p-5 space-y-2.5">
+          {Array.from({ length: 10 }).map((_, index) => (
+            <Skeleton
+              key={index}
+              className="w-full aspect-[16/4] items-center justify-between flex bg-muted/80"
+            />
+          ))}
+        </div>
       )}
     </aside>
   );

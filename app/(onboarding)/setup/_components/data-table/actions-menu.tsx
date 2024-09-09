@@ -23,7 +23,7 @@ export const ActionsMenu = ({
   principal: Database["public"]["Tables"]["email_accounts"]["Row"]["principal"];
   user_id: Database["public"]["Tables"]["email_accounts"]["Row"]["user_id"];
 }) => {
-  console.log(email, principal, user_id);
+  ;
   async function handleDeleteEmail() {
     toast.loading("Eliminando correo...");
     const { error } = await supabase
@@ -35,7 +35,7 @@ export const ActionsMenu = ({
       toast.dismiss();
       toast.error("Error al eliminar el correo");
     } else {
-      console.log("Email deleted successfully");
+      ;
       toast.dismiss();
       toast.success("Correo electrónico eliminado correctamente");
     }
@@ -68,7 +68,7 @@ export const ActionsMenu = ({
     }
   }
 
-  console.log(principal, email);
+  ;
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>

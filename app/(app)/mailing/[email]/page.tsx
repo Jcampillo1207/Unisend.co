@@ -51,11 +51,11 @@ const EmailPage = async ({
 
   const { message } = await response.json();
 
-  console.log(message)
+  
 
 
   return (
-    <section className="w-full h-dvh min-h-dvh max-h-dvh overflow-x-hidden overflow-y-scroll flex flex-col items-start justify-start bg-muted/50 relative">
+    <section className="w-full h-dvh min-h-dvh max-h-dvh overflow-x-hidden overflow-y-scroll no-scrollbar flex flex-col items-start justify-start bg-muted/50 relative">
       <HeaderEmail userId={user.id} emailId={emailId} />
       <MessageRender emailData={message} />
     </section>

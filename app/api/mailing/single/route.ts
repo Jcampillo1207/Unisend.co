@@ -11,7 +11,7 @@ function processParts(payload: any) {
   const attachments: any[] = [];
 
   function processPartRecursive(part: any) {
-    console.log("Processing part:", part.mimeType);
+    ;
 
     if (part.mimeType === "text/plain") {
       textBody += decodeContent(part.body.data);
@@ -49,7 +49,7 @@ function processParts(payload: any) {
     }
   }
 
-  console.log("Processing payload:", payload);
+  ;
 
   if (payload.body && payload.body.data) {
     if (payload.mimeType === "text/html") {
@@ -94,7 +94,7 @@ async function getMessageDetails(gmailClient: any, messageId: string) {
   const dateHeader =
     headers.find((header: any) => header.name === "Date")?.value || null;
 
-  console.log("Message payload:", payload);
+  ;
 
   const { textBody, htmlBody, inlineImages, attachments } =
     processParts(payload);

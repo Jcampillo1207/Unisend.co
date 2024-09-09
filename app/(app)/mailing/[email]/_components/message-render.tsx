@@ -1,4 +1,4 @@
-"use client";
+"use client"
 
 import React, { useState, useEffect, useRef } from "react";
 import DOMPurify from "dompurify";
@@ -9,7 +9,11 @@ const EmailRenderer = ({ emailData }) => {
   const [showHtml, setShowHtml] = useState(true);
   const [sanitizedHtml, setSanitizedHtml] = useState("");
   const [iframeHeight, setIframeHeight] = useState("0px");
+  const [backgroundColor, setBackgroundColor] = useState("");
+  const [textColor, setTextColor] = useState("");
+  const [headerHeight, setHeaderHeight] = useState(0);
   const iframeRef = useRef(null);
+  const headerRef = useRef(null);
 
   useEffect(() => {
     if (emailData.htmlBody) {
@@ -23,7 +27,21 @@ const EmailRenderer = ({ emailData }) => {
     }
   }, [emailData.htmlBody]);
 
-  console.log(sanitizedHtml);
+  useEffect(() => {
+    const measureHeaderHeight = () => {
+      if (headerRef.current) {
+        const height = headerRef.current.offsetHeight;
+        setHeaderHeight(height);
+      }
+    };
+
+    measureHeaderHeight();
+    window.addEventListener("resize", measureHeaderHeight);
+
+    return () => {
+      window.removeEventListener("resize", measureHeaderHeight);
+    };
+  }, []);
 
   useEffect(() => {
     if (iframeRef.current) {
@@ -37,24 +55,43 @@ const EmailRenderer = ({ emailData }) => {
         setIframeHeight(`${height}px`);
       };
 
-      // Resize on load
+      const detectColors = () => {
+        const bodyElement = iframeDocument.body;
+        const computedStyle = window.getComputedStyle(bodyElement);
+        const bgColor = computedStyle.backgroundColor;
+        const txtColor = computedStyle.color;
+
+        setBackgroundColor(bgColor);
+        setTextColor(txtColor);
+
+        if (bgColor === "rgba(0, 0, 0, 0)" || bgColor === "transparent") {
+          const brightness = getBrightness(txtColor);
+          setBackgroundColor(brightness > 128 ? "#000000" : "#FFFFFF");
+        }
+      };
+
       if (iframeDocument.readyState === "complete") {
         resizeIframe();
+        detectColors();
       } else {
-        iframeDocument.addEventListener("load", resizeIframe);
+        iframeDocument.addEventListener("load", () => {
+          resizeIframe();
+          detectColors();
+        });
       }
 
-      // Resize on window resize
       window.addEventListener("resize", resizeIframe);
 
-      // MutationObserver to watch for dynamic content changes
-      const observer = new MutationObserver(resizeIframe);
+      const observer = new MutationObserver(() => {
+        resizeIframe();
+        detectColors();
+      });
       observer.observe(iframeDocument.body, { childList: true, subtree: true });
 
-      // Fallback: check size periodically for a short time after initial load
       let checkCount = 0;
       const intervalId = setInterval(() => {
         resizeIframe();
+        detectColors();
         checkCount++;
         if (checkCount > 10) clearInterval(intervalId);
       }, 100);
@@ -67,6 +104,15 @@ const EmailRenderer = ({ emailData }) => {
     }
   }, [sanitizedHtml]);
 
+  const getBrightness = (color) => {
+    const rgb = color.match(/\d+/g);
+    return rgb
+      ? (parseInt(rgb[0]) * 299 +
+          parseInt(rgb[1]) * 587 +
+          parseInt(rgb[2]) * 114) /
+          1000
+      : 0;
+  };
 
   const renderTextBody = () => {
     return emailData.textBody.split("\n").map((line, index) => (
@@ -93,7 +139,11 @@ const EmailRenderer = ({ emailData }) => {
 
   return (
     <div className="w-full flex-1">
-      <div className="w-full bg-muted/60 border-b p-5 md:px-7">
+      <div
+        ref={headerRef}
+        className="w-full bg-muted/60 border-b p-5 md:px-7"
+        id="email-header"
+      >
         <h2 className="text-2xl font-bold">{emailData.subject}</h2>
         <p className="text-sm text-muted-foreground">{emailData.from}</p>
         <p className="text-sm text-muted-foreground">
@@ -101,15 +151,23 @@ const EmailRenderer = ({ emailData }) => {
         </p>
       </div>
 
-      <div className="w-full flex-1 mx-auto max-w-xl lg:max-w-2xl">
+      <div
+        className="w-full flex-1 mx-auto p-5 md:px-7"
+        id="email-content"
+        style={{
+          backgroundColor: backgroundColor,
+          color: textColor,
+          minHeight: `calc(100dvh - 56px - ${headerHeight}px)`,
+        }}
+      >
         {showHtml && emailData.htmlBody ? (
           <iframe
             ref={iframeRef}
             title="Email Content"
-            className="w-full border-none h-fit"
+            className="w-full border-none h-fit max-w-2xl mx-auto overflow-hidden no-scrollbar"
             style={{
               height: iframeHeight,
-              overflow: "hidden",
+              overflow: "hidden !important",
             }}
             sandbox="allow-scripts allow-same-origin"
           />

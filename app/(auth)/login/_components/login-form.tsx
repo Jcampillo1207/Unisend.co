@@ -40,7 +40,7 @@ export const LoginForm = () => {
 
   async function onSubmit(values: z.infer<typeof loginschema>) {
     toast.loading("Verificando tus datos...");
-    console.log(values);
+    ;
     const { data, error } = await LoginUser(values.email, values.password);
 
     if (error) {

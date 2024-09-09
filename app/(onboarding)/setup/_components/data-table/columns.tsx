@@ -76,7 +76,7 @@ export const columns: ColumnDef<Payment>[] = [
       const principal = cell.row.original.principal;
       const user_id = cell.row.original.user_id;
 
-      console.log(email);
+      ;
       return (
         <ActionsMenu user_id={user_id} email={email} principal={principal} />
       );

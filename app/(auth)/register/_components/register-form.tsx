@@ -42,7 +42,7 @@ export const RegisterForm = () => {
 
   async function onSubmit(values: z.infer<typeof registerSchema>) {
     toast.loading("Verificando tus datos...");
-    console.log(values);
+    ;
     const { data, error } = await SignupUser(
       values.email,
       values.password,
@@ -53,13 +53,13 @@ export const RegisterForm = () => {
       toast.dismiss();
       toast.error(error.message);
     } else {
-      console.log(data);
+      ;
       toast.dismiss();
       setOpen(true);
     }
   }
 
-  console.log(open);
+  ;
 
   return (
     <>

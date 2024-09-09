@@ -17,6 +17,7 @@ interface MessageDetails {
   body: string;
   isUnread: boolean;
   category: string;
+  labelIds: string[];
 }
 
 // Function to get the content and details of an email
@@ -30,26 +31,21 @@ async function getMessageDetails(
     format: "full",
   });
 
-
   const payload = response.data.payload!;
   const headers = payload.headers!;
   const labelIds = response.data.labelIds || [];
   const dateHeader =
     headers.find((header) => header.name === "Date")?.value || null;
 
-
   const from =
     headers.find((header) => header.name === "From")?.value || "Desconocido";
-
 
   const subject =
     headers.find((header) => header.name === "Subject")?.value || "Sin Asunto";
 
-
   const body =
     payload.parts?.find((part) => part.mimeType === "text/plain")?.body?.data ||
     "Sin contenido";
-
 
   // Determine if the message is marked as unread
   const isUnread = labelIds.includes("UNREAD");
@@ -68,7 +64,6 @@ async function getMessageDetails(
     category = "Spam";
   }
 
-
   return {
     id: messageId,
     from,
@@ -76,8 +71,28 @@ async function getMessageDetails(
     date: dateHeader,
     body: Buffer.from(body, "base64").toString("utf-8"),
     isUnread,
+    labelIds,
     category, // Include the new category field
   };
+}
+
+function getCategoryLabel(category: string | null): string {
+  switch (category) {
+    case "Primary":
+      return "INBOX";
+    case "Social":
+      return "CATEGORY_SOCIAL";
+    case "Promotions":
+      return "CATEGORY_PROMOTIONS";
+    case "Updates":
+      return "CATEGORY_UPDATES";
+    case "Forums":
+      return "CATEGORY_FORUMS";
+    case "Spam":
+      return "SPAM";
+    default:
+      return "INBOX";
+  }
 }
 
 export async function GET(req: Request) {
@@ -86,7 +101,9 @@ export async function GET(req: Request) {
   const userId = url.searchParams.get("userid");
   const email = url.searchParams.get("email");
   const pageToken = url.searchParams.get("pageToken"); // Token for pagination
+  const category = url.searchParams.get("category");
 
+  ;
 
   if (!userId) {
     return NextResponse.json(
@@ -102,7 +119,6 @@ export async function GET(req: Request) {
     .eq("email", email)
     .single();
 
-
   if (error || !emailAccount) {
     return NextResponse.json(
       { error: "Cuenta de correo no encontrada" },
@@ -114,11 +130,12 @@ export async function GET(req: Request) {
 
   try {
     // Add the `pageToken` to the message request to get the next page if necessary
+    const labelId = getCategoryLabel(category);
     const response = await gmailClient.users.messages.list({
       userId: "me",
       maxResults: 12,
       includeSpamTrash: true,
-      prettyPrint: true,
+      labelIds: [labelId],
       pageToken: pageToken || undefined,
     });
 
@@ -160,11 +177,12 @@ export async function GET(req: Request) {
             .eq("email", email);
 
           // Reintentar la solicitud de listado de mensajes con el nuevo token
+          const labelId = getCategoryLabel(category);
           const response = await gmailClient.users.messages.list({
             userId: "me",
             maxResults: 12,
             includeSpamTrash: true,
-            prettyPrint: true,
+            labelIds: [labelId],
             pageToken: pageToken || undefined,
           });
 
