@@ -133,6 +133,11 @@ export async function GET(req: Request) {
   const messageId = url.searchParams.get("messageId"); // Obtener el ID del mensaje
 
   if (!userId || !messageId) {
+    console.log(
+      "No se proporcionaron el ID de usuario o el ID del mensaje",
+      userId,
+      messageId
+    );
     return NextResponse.json(
       { error: "ID de usuario o ID del mensaje no proporcionado" },
       { status: 400 }
@@ -147,6 +152,7 @@ export async function GET(req: Request) {
     .single();
 
   if (error || !emailAccount) {
+    console.error("Error al obtener la cuenta de correo", error);
     return NextResponse.json(
       { error: "Cuenta de correo no encontrada" },
       { status: 400 }
@@ -161,21 +167,25 @@ export async function GET(req: Request) {
 
     // Si el correo está marcado como no leído, lo marcamos como leído
     if (detailedMessage.isUnread) {
+      console.log("Marcando como leido el correo", messageId);
       await markMessageAsRead(gmailClient, messageId);
     }
 
     // Devolver el contenido del mensaje
+    console.log("Devolver el contenido del mensaje", detailedMessage);
     return NextResponse.json({ message: detailedMessage });
   } catch (error: any) {
     // Si es un error de autenticación (token expirado), refrescar el token
     if (error.response?.status === 401) {
       try {
+        console.log("Token expirado, intentando refrescarlo");
         const newAccessToken = await refreshAccessToken(
           emailAccount.refresh_token
         );
 
         // Actualizar el cliente de Gmail con el nuevo access token
         if (newAccessToken) {
+          console.log("Actualizando el token de acceso");
           gmailClient = getGmailClient(newAccessToken);
         }
 
@@ -186,13 +196,16 @@ export async function GET(req: Request) {
           .eq("user_id", userId)
           .eq("email", email);
 
+        console.log("Refrescando el token de acceso");
         // Reintentar obtener los detalles del mensaje después de refrescar el token
         const detailedMessage = await getMessageDetails(gmailClient, messageId);
 
         if (detailedMessage.isUnread) {
+          console.log("Marcando como leido el correo", messageId);
           await markMessageAsRead(gmailClient, messageId);
         }
 
+        console.log("Devolver el contenido del mensaje", detailedMessage);
         return NextResponse.json({ message: detailedMessage });
       } catch (refreshError) {
         console.error("Error al refrescar el token de acceso:", refreshError);

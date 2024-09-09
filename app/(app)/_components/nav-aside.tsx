@@ -78,7 +78,27 @@ export const NavAside = ({
                     key={account.email}
                     onClick={() =>
                       router.replace(
-                        `/mailing?emailroute=${account.email}&category=Primary`
+                        `/mailing?emailroute=${account.email}&category=Primary${
+                          params.get("f") && params.get("f") === "true"
+                            ? "&f=true"
+                            : ""
+                        }${params.get("q") ? `&q=${params.get("q")}` : ""}${
+                          params.get("date")
+                            ? `&date=${params.get("date")}`
+                            : ""
+                        }${
+                          params.get("sender")
+                            ? `&sender=${params.get("sender")}`
+                            : ""
+                        }${
+                          params.get("hasAttachment")
+                            ? `&hasAttachment=${params.get("hasAttachment")}`
+                            : ""
+                        }${
+                          params.get("isImportant")
+                            ? `&isImportant=${params.get("isImportant")}`
+                            : ""
+                        }`
                       )
                     }
                     className={cn(
@@ -131,7 +151,27 @@ export const NavAside = ({
               <Button
                 onClick={() =>
                   router.replace(
-                    `/mailing?emailroute=${activeAccount?.email}&category=Primary`
+                    `/mailing?emailroute=${
+                      activeAccount?.email
+                    }&category=Primary${
+                      params.get("f") && params.get("f") === "true"
+                        ? "&f=true"
+                        : ""
+                    }${params.get("q") ? `&q=${params.get("q")}` : ""}${
+                      params.get("date") ? `&date=${params.get("date")}` : ""
+                    }${
+                      params.get("sender")
+                        ? `&sender=${params.get("sender")}`
+                        : ""
+                    }${
+                      params.get("hasAttachment")
+                        ? `&hasAttachment=${params.get("hasAttachment")}`
+                        : ""
+                    }${
+                      params.get("isImportant")
+                        ? `&isImportant=${params.get("isImportant")}`
+                        : ""
+                    }`
                   )
                 }
                 variant={"outline"}
@@ -159,7 +199,27 @@ export const NavAside = ({
               <Button
                 onClick={() =>
                   router.replace(
-                    `/mailing?emailroute=${activeAccount?.email}&category=Social`
+                    `/mailing?emailroute=${
+                      activeAccount?.email
+                    }&category=Social${
+                      params.get("f") && params.get("f") === "true"
+                        ? "&f=true"
+                        : ""
+                    }${params.get("q") ? `&q=${params.get("q")}` : ""}${
+                      params.get("date") ? `&date=${params.get("date")}` : ""
+                    }${
+                      params.get("sender")
+                        ? `&sender=${params.get("sender")}`
+                        : ""
+                    }${
+                      params.get("hasAttachment")
+                        ? `&hasAttachment=${params.get("hasAttachment")}`
+                        : ""
+                    }${
+                      params.get("isImportant")
+                        ? `&isImportant=${params.get("isImportant")}`
+                        : ""
+                    }`
                   )
                 }
                 variant={"outline"}
@@ -187,7 +247,27 @@ export const NavAside = ({
               <Button
                 onClick={() =>
                   router.replace(
-                    `/mailing?emailroute=${activeAccount?.email}&category=Updates`
+                    `/mailing?emailroute=${
+                      activeAccount?.email
+                    }&category=Updates${
+                      params.get("f") && params.get("f") === "true"
+                        ? "&f=true"
+                        : ""
+                    }${params.get("q") ? `&q=${params.get("q")}` : ""}${
+                      params.get("date") ? `&date=${params.get("date")}` : ""
+                    }${
+                      params.get("sender")
+                        ? `&sender=${params.get("sender")}`
+                        : ""
+                    }${
+                      params.get("hasAttachment")
+                        ? `&hasAttachment=${params.get("hasAttachment")}`
+                        : ""
+                    }${
+                      params.get("isImportant")
+                        ? `&isImportant=${params.get("isImportant")}`
+                        : ""
+                    }`
                   )
                 }
                 variant={"outline"}
@@ -215,7 +295,27 @@ export const NavAside = ({
               <Button
                 onClick={() =>
                   router.replace(
-                    `/mailing?emailroute=${activeAccount?.email}&category=Promotions`
+                    `/mailing?emailroute=${
+                      activeAccount?.email
+                    }&category=Promotions${
+                      params.get("f") && params.get("f") === "true"
+                        ? "&f=true"
+                        : ""
+                    }${params.get("q") ? `&q=${params.get("q")}` : ""}${
+                      params.get("date") ? `&date=${params.get("date")}` : ""
+                    }${
+                      params.get("sender")
+                        ? `&sender=${params.get("sender")}`
+                        : ""
+                    }${
+                      params.get("hasAttachment")
+                        ? `&hasAttachment=${params.get("hasAttachment")}`
+                        : ""
+                    }${
+                      params.get("isImportant")
+                        ? `&isImportant=${params.get("isImportant")}`
+                        : ""
+                    }`
                   )
                 }
                 variant={"outline"}
@@ -243,7 +343,27 @@ export const NavAside = ({
               <Button
                 onClick={() =>
                   router.replace(
-                    `/mailing?emailroute=${activeAccount?.email}&category=Forums`
+                    `/mailing?emailroute=${
+                      activeAccount?.email
+                    }&category=Forums${
+                      params.get("f") && params.get("f") === "true"
+                        ? "&f=true"
+                        : ""
+                    }${params.get("q") ? `&q=${params.get("q")}` : ""}${
+                      params.get("date") ? `&date=${params.get("date")}` : ""
+                    }${
+                      params.get("sender")
+                        ? `&sender=${params.get("sender")}`
+                        : ""
+                    }${
+                      params.get("hasAttachment")
+                        ? `&hasAttachment=${params.get("hasAttachment")}`
+                        : ""
+                    }${
+                      params.get("isImportant")
+                        ? `&isImportant=${params.get("isImportant")}`
+                        : ""
+                    }`
                   )
                 }
                 variant={"outline"}
@@ -271,7 +391,25 @@ export const NavAside = ({
               <Button
                 onClick={() =>
                   router.replace(
-                    `/mailing?emailroute=${activeAccount?.email}&category=Spam`
+                    `/mailing?emailroute=${activeAccount?.email}&category=Spam${
+                      params.get("f") && params.get("f") === "true"
+                        ? "&f=true"
+                        : ""
+                    }${params.get("q") ? `&q=${params.get("q")}` : ""}${
+                      params.get("date") ? `&date=${params.get("date")}` : ""
+                    }${
+                      params.get("sender")
+                        ? `&sender=${params.get("sender")}`
+                        : ""
+                    }${
+                      params.get("hasAttachment")
+                        ? `&hasAttachment=${params.get("hasAttachment")}`
+                        : ""
+                    }${
+                      params.get("isImportant")
+                        ? `&isImportant=${params.get("isImportant")}`
+                        : ""
+                    }`
                   )
                 }
                 variant={"outline"}

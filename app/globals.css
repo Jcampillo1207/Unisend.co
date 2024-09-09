@@ -80,7 +80,8 @@
 /* Para personalizar el contenido del editor */
 .ql-editor {
   font-size: 1rem; /* Tamaño de fuente */
-  border-radius: 0.5rem; /* Bordes redondeados */
+  border-radius: 0 !important; /* Bordes redondeados */
+  
   padding: 0 0 !important;
   flex: 1 1 0%;
   font-family: inherit !important;
@@ -92,11 +93,13 @@
 
 .ql-editor .ql-blank {
   padding: 0 0 !important;
+  color: 0 0% 10% !important;
 }
 
 /* Personalizar la barra de herramientas */
 .ql-toolbar {
   /* Bordes superiores redondeados */
+  border-radius: 0 0 0 0 !important;
   border: 4px solid var(--border) !important;
   margin-bottom: 1rem !important;
   font-family: inherit !important;
@@ -104,7 +107,7 @@
 
 .ql-editor.ql-blank::before {
   font-size: 1rem !important;
-  color: var(--muted-foreground) !important;
+  color: 0 0% 10% !important;
   padding: 0 0 !important;
   right: auto !important;
   left: 0px !important;

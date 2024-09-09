@@ -21,24 +21,6 @@ export const HeaderEmail = ({
   return (
     <>
       <div className="w-full h-14 items-center justify-between flex px-4 border-b bg-background shrink-0 min-h-14 sticky top-0 left-0 z-10">
-        <div className="w-fit h-full flex items-center justify-start gap-x-0.5">
-          <Button
-            variant="ghost"
-            size="icon"
-            className="text-muted-foreground hover:text-foreground rounded-lg"
-            onClick={() => router.back()}
-          >
-            <ArrowLeft className="size-3" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="text-muted-foreground hover:text-foreground rounded-lg"
-            onClick={() => router.forward()}
-          >
-            <ArrowRight className="size-3" />
-          </Button>
-        </div>
         <div className="w-fit h-full items-center justify-center flex gap-x-1.5">
           <Button
             variant={"default"}

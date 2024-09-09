@@ -1,14 +1,16 @@
-"use client"
+"use client";
 
 import React, { useState, useEffect, useRef } from "react";
 import DOMPurify from "dompurify";
-import { format } from "date-fns";
+import { format, formatDate, formatDistanceToNow } from "date-fns";
 import { es } from "date-fns/locale";
+import { cn } from "@/lib/utils";
 
 const EmailRenderer = ({ emailData }) => {
   const [showHtml, setShowHtml] = useState(true);
   const [sanitizedHtml, setSanitizedHtml] = useState("");
   const [iframeHeight, setIframeHeight] = useState("0px");
+  const [iframeWidth, setIframeWidth] = useState("0px");
   const [backgroundColor, setBackgroundColor] = useState("");
   const [textColor, setTextColor] = useState("");
   const [headerHeight, setHeaderHeight] = useState(0);
@@ -52,7 +54,9 @@ const EmailRenderer = ({ emailData }) => {
 
       const resizeIframe = () => {
         const height = iframeDocument.documentElement.scrollHeight;
+        const width = iframeDocument.documentElement.scrollWidth;
         setIframeHeight(`${height}px`);
+        setIframeWidth(`${width}px`);
       };
 
       const detectColors = () => {
@@ -114,6 +118,7 @@ const EmailRenderer = ({ emailData }) => {
       : 0;
   };
 
+  console.log(iframeWidth);
   const renderTextBody = () => {
     return emailData.textBody.split("\n").map((line, index) => (
       <p key={index} className="mb-2">
@@ -137,6 +142,23 @@ const EmailRenderer = ({ emailData }) => {
     ));
   };
 
+  console.log(iframeWidth);
+  console.log(parseInt(iframeWidth.split("px")[0]));
+
+  const formatEmailDate = (date: string | number | Date) => {
+    const emailDate = new Date(date);
+    const now = new Date();
+    const diffInHours = Math.abs(now.getTime() - emailDate.getTime()) / 36e5;
+
+    if (diffInHours < 24) {
+      return formatDistanceToNow(emailDate, { addSuffix: true, locale: es });
+    } else if (diffInHours < 48) {
+      return "ayer";
+    } else {
+      return formatDate(emailDate, "LLL dd, yyyy HH:mm", { locale: es });
+    }
+  };
+
   return (
     <div className="w-full flex-1">
       <div
@@ -146,8 +168,8 @@ const EmailRenderer = ({ emailData }) => {
       >
         <h2 className="text-2xl font-bold">{emailData.subject}</h2>
         <p className="text-sm text-muted-foreground">{emailData.from}</p>
-        <p className="text-sm text-muted-foreground">
-          {format(new Date(emailData.date), "PPpp", { locale: es })}
+        <p className="text-xs text-muted-foreground italic">
+          {formatEmailDate(emailData.date)}
         </p>
       </div>
 
@@ -164,7 +186,12 @@ const EmailRenderer = ({ emailData }) => {
           <iframe
             ref={iframeRef}
             title="Email Content"
-            className="w-full border-none h-fit max-w-2xl mx-auto overflow-hidden no-scrollbar"
+            className={cn(
+              "w-full border-none h-fit overflow-hidden no-scrollbar",
+              parseInt(iframeWidth.split("px")[0]) < 600
+                ? "w-full mx-auto max-w-xl"
+                : "w-" + iframeWidth + " mx-auto"
+            )}
             style={{
               height: iframeHeight,
               overflow: "hidden !important",

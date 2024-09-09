@@ -28,7 +28,7 @@ export default function RootLayout({
   return (
     <html lang="es">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased bg-background no-scrollbar`}
+        className={`${geistSans.variable} ${geistMono.variable} antialiased bg-background no-scrollbar selection:text-foreground selection:bg-primary/50`}
       >
         {children}
         <Toaster

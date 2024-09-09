@@ -5,10 +5,11 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Loader, MailX } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { formatDate } from "date-fns";
+import { formatDate, formatDistanceToNow } from "date-fns";
 import { es } from "date-fns/locale";
 import { Label } from "@/components/ui/label";
 import { HeaderAside } from "./header-aside";
+import { FiltersAside } from "./filters-aside";
 
 export interface Email {
   id: string;
@@ -16,7 +17,7 @@ export interface Email {
   subject: string;
   snippet: string;
   date: string;
-  isUnread: boolean; // Nuevo campo para indicar si no ha sido leído
+  isUnread: boolean;
   category: string;
 }
 
@@ -25,28 +26,38 @@ export const AsideMailing = ({ user_id }: { user_id: string }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [nextPageToken, setNextPageToken] = useState<string | null>(null);
-  const [loadingMore, setLoadingMore] = useState(false); // Para manejar la carga de más correos
+  const [loadingMore, setLoadingMore] = useState(false);
   const router = useRouter();
   const pathname = usePathname();
+  const searchParams = useSearchParams();
 
   const activePath = pathname?.split("/").pop();
-  const categoryParam = useSearchParams().get("category");
-
-  ;
-
-  const emailParam = useSearchParams().get("emailroute");
-  const containerRef = useRef<HTMLDivElement>(null); // Referencia al contenedor de scroll
+  const categoryParam = searchParams.get("category");
+  const emailParam = searchParams.get("emailroute");
+  const filterUnread = searchParams.get("f") === "true";
+  const hasAttachment = searchParams.get("hasAttachment") === "true";
+  const isImportant = searchParams.get("isImportant") === "true";
+  const date = searchParams.get("date");
+  const q = searchParams.get("q");
+  const containerRef = useRef<HTMLDivElement>(null);
 
   const fetchEmails = async (pageToken?: string) => {
     try {
-      setLoading(pageToken ? false : true); // Si es la primera carga, setLoading es true, si es paginación, false
-      setLoadingMore(pageToken ? true : false); // Solo mostrar "Cargando más" cuando sea paginación
+      setLoading(pageToken ? false : true);
+      setLoadingMore(pageToken ? true : false);
 
-      const response = await fetch(
-        `/api/mailing/list?userid=${user_id}&email=${emailParam}&category=${categoryParam}${
-          pageToken ? `&pageToken=${pageToken}` : ""
-        }`
-      );
+      const url = new URL(`/api/mailing/list`, window.location.origin);
+      url.searchParams.append("userid", user_id);
+      url.searchParams.append("email", emailParam || "");
+      url.searchParams.append("category", categoryParam || "");
+      if (pageToken) url.searchParams.append("pageToken", pageToken);
+      if (filterUnread) url.searchParams.append("f", "true");
+      if (hasAttachment) url.searchParams.append("hasAttachment", "true");
+      if (isImportant) url.searchParams.append("isImportant", "true");
+      if (date) url.searchParams.append("date", date);
+      if (q) url.searchParams.append("q", q);
+
+      const response = await fetch(url.toString());
 
       if (!response.ok) {
         throw new Error("Error al obtener los correos", { cause: response });
@@ -54,17 +65,18 @@ export const AsideMailing = ({ user_id }: { user_id: string }) => {
 
       const data = await response.json();
 
-      setEmails((prevEmails) => [...prevEmails, ...data.messages]);
-      setNextPageToken(data.nextPageToken || null); // Actualizar el token de la siguiente página
+      setEmails((prevEmails) =>
+        pageToken ? [...prevEmails, ...data.messages] : data.messages
+      );
+      setNextPageToken(data.nextPageToken || null);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Error desconocido");
     } finally {
       setLoading(false);
-      setLoadingMore(false); // Finalizar la carga de más correos
+      setLoadingMore(false);
     }
   };
 
-  // Función para marcar un correo como leído en la UI
   const markEmailAsReadInUI = (emailId: string) => {
     setEmails((prevEmails) =>
       prevEmails.map((email) =>
@@ -73,16 +85,21 @@ export const AsideMailing = ({ user_id }: { user_id: string }) => {
     );
   };
 
-  // Efecto para cargar los correos inicialmente
   useEffect(() => {
     if (emailParam) {
-      // Limpiar los correos antes de hacer una nueva solicitud
       setEmails([]);
       fetchEmails();
     }
-  }, [emailParam, categoryParam]);
+  }, [
+    emailParam,
+    categoryParam,
+    filterUnread,
+    hasAttachment,
+    isImportant,
+    date,
+    q,
+  ]);
 
-  // Función para detectar cuando el usuario llega al final del scroll
   const handleScroll = () => {
     if (containerRef.current) {
       const { scrollTop, scrollHeight, clientHeight } = containerRef.current;
@@ -91,13 +108,11 @@ export const AsideMailing = ({ user_id }: { user_id: string }) => {
         nextPageToken &&
         !loadingMore
       ) {
-        // Cuando llegamos al final del scroll, cargamos más correos
         fetchEmails(nextPageToken);
       }
     }
   };
 
-  // Agregar un listener para el scroll cuando el componente se monta
   useEffect(() => {
     const container = containerRef.current;
     if (container) {
@@ -109,7 +124,7 @@ export const AsideMailing = ({ user_id }: { user_id: string }) => {
         container.removeEventListener("scroll", handleScroll);
       }
     };
-  }, [nextPageToken, loadingMore]); // Solo volver a añadir el evento si el token cambia o se está cargando más
+  }, [nextPageToken, loadingMore]);
 
   const centerSelectedEmail = (emailId: string) => {
     const emailElement = document.getElementById(`email-${emailId}`);
@@ -126,6 +141,20 @@ export const AsideMailing = ({ user_id }: { user_id: string }) => {
     }
   };
 
+  const formatEmailDate = (date: string | number | Date) => {
+    const emailDate = new Date(date);
+    const now = new Date();
+    const diffInHours = Math.abs(now.getTime() - emailDate.getTime()) / 36e5;
+
+    if (diffInHours < 24) {
+      return formatDistanceToNow(emailDate, { addSuffix: true, locale: es });
+    } else if (diffInHours < 48) {
+      return "ayer";
+    } else {
+      return formatDate(emailDate, "LLL dd, yyyy HH:mm", { locale: es });
+    }
+  };
+
   if (loading && emails.length === 0) {
     return (
       <aside
@@ -133,11 +162,15 @@ export const AsideMailing = ({ user_id }: { user_id: string }) => {
         className="w-full border-r items-start justify-start max-w-sm flex flex-col relative h-dvh min-h-dvh max-h-dvh overflow-x-hidden overflow-y-scroll no-scrollbar shrink-0"
       >
         <HeaderAside />
+        <FiltersAside />
         <div className="w-full h-fit items-start justify-start p-5 space-y-2.5">
-          {Array.from({ length: 10 }).map((_, index) => (
+          {Array.from({ length: 12 }).map((_, index) => (
             <Skeleton
               key={index}
-              className="w-full aspect-[16/4] items-center justify-between flex bg-muted/80"
+              className={cn(
+                "w-full aspect-[16/4] flex bg-muted/80",
+                "delay-[" + index + index * 0.5 + "ms]"
+              )}
             />
           ))}
         </div>
@@ -149,6 +182,7 @@ export const AsideMailing = ({ user_id }: { user_id: string }) => {
     return (
       <aside className="w-full border-r items-start justify-start max-w-sm flex flex-col relative h-dvh min-h-dvh max-h-dvh overflow-x-hidden overflow-y-scroll no-scrollbar shrink-0">
         <HeaderAside />
+        <FiltersAside />
         <div className="w-full h-auto items-center justify-center p-5 flex-1 flex flex-col gap-y-3 px-4">
           <div className="w-fit h-fit aspect-square p-2.5 rounded-xl border border-destructive bg-destructive/20">
             <MailX className="size-6 text-destructive" />
@@ -162,15 +196,15 @@ export const AsideMailing = ({ user_id }: { user_id: string }) => {
     );
   }
 
-  ;
-
   return (
     <aside
       ref={containerRef}
-      className={cn("w-full border-r items-start justify-start max-w-sm flex flex-col relative h-dvh min-h-dvh max-h-dvh overflow-x-hidden overflow-y-scroll shrink-0 snap-y snap-mandatory scroll-smooth no-scrollbar")}
+      className={cn(
+        "w-full border-r items-start justify-start max-w-sm flex flex-col relative h-dvh min-h-dvh max-h-dvh overflow-x-hidden overflow-y-scroll shrink-0 snap-y snap-mandatory scroll-smooth no-scrollbar"
+      )}
     >
       <HeaderAside />
-
+      <FiltersAside />
       {emails.length > 0 ? (
         <div className="w-full h-fit items-start justify-start">
           {emails.map((email: Email, key: number) => (
@@ -178,7 +212,13 @@ export const AsideMailing = ({ user_id }: { user_id: string }) => {
               onClick={() => {
                 markEmailAsReadInUI(email.id);
                 router.push(
-                  `/mailing/${email.id}?emailroute=${emailParam}&sender=${email.from}&category=${categoryParam}`
+                  `/mailing/${email.id}?emailroute=${emailParam}&sender=${
+                    email.from
+                  }${categoryParam ? `&category=${categoryParam}` : ""}${
+                    date ? `&date=${date}` : ""
+                  }${isImportant ? "&isImportant=true" : ""}${
+                    hasAttachment ? "&hasAttachment=true" : ""
+                  }${filterUnread ? "&f=true" : ""}${q ? `&q=${q}` : ""}`
                 );
                 centerSelectedEmail(email.id);
               }}
@@ -192,7 +232,6 @@ export const AsideMailing = ({ user_id }: { user_id: string }) => {
                 activePath == email.id && "bg-primary/30 hover:bg-primary/40"
               )}
             >
-              {/* Mostrar la línea morada solo si el correo no ha sido leído */}
               <div
                 className={cn(
                   "flex-1 max-w-[2px] items-start shrink-0 min-w-[2px] rounded-full",
@@ -235,9 +274,7 @@ export const AsideMailing = ({ user_id }: { user_id: string }) => {
                     activePath == email.id && "text-foreground"
                   )}
                 >
-                  <Label>
-                    {formatDate(email.date, "LLL dd, yyyy", { locale: es })}
-                  </Label>
+                  <Label className="cursor-pointe italic text-xs">{formatEmailDate(email.date)}</Label>
                 </span>
               </div>
             </div>
