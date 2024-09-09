@@ -1,79 +1,8 @@
-import { getGmailClient } from "@/lib/gmail-client"; // Agregada la importación correcta
+import { getGmailClient } from "@/lib/gmail-client";
 import { createAdminClient } from "@/lib/supabase/server-role";
 import { NextResponse } from "next/server";
-import { Base64 } from "js-base64";
 import { refreshAccessToken } from "@/lib/refrsh-access-token";
 
-function processParts(payload: any) {
-  let textBody = "";
-  let htmlBody = "";
-  const inlineImages: any[] = [];
-  const attachments: any[] = [];
-
-  function processPartRecursive(part: any) {
-    ;
-
-    if (part.mimeType === "text/plain") {
-      textBody += decodeContent(part.body.data);
-    } else if (part.mimeType === "text/html") {
-      htmlBody += decodeContent(part.body.data);
-    } else if (part.mimeType.startsWith("image/")) {
-      inlineImages.push({
-        filename: part.filename,
-        mimeType: part.mimeType,
-        contentId: part.headers?.find(
-          (header: any) => header.name.toLowerCase() === "content-id"
-        )?.value,
-        data: part.body.attachmentId || part.body.data,
-      });
-    } else if (part.filename && part.body.attachmentId) {
-      attachments.push({
-        filename: part.filename,
-        mimeType: part.mimeType,
-        attachmentId: part.body.attachmentId,
-      });
-    }
-
-    if (part.parts && Array.isArray(part.parts)) {
-      part.parts.forEach(processPartRecursive);
-    }
-  }
-
-  function decodeContent(data: string): string {
-    if (!data) return "";
-    try {
-      return Buffer.from(data, "base64").toString("utf-8");
-    } catch (error) {
-      console.error("Error decoding content:", error);
-      return "";
-    }
-  }
-
-  ;
-
-  if (payload.body && payload.body.data) {
-    if (payload.mimeType === "text/html") {
-      htmlBody = decodeContent(payload.body.data);
-    } else if (payload.mimeType === "text/plain") {
-      textBody = decodeContent(payload.body.data);
-    }
-  }
-
-  if (payload.parts && Array.isArray(payload.parts)) {
-    payload.parts.forEach(processPartRecursive);
-  } else {
-    processPartRecursive(payload);
-  }
-
-  console.log("Processed content:", {
-    textBody: textBody.substring(0, 100),
-    htmlBody: htmlBody.substring(0, 100),
-  });
-
-  return { textBody, htmlBody, inlineImages, attachments };
-}
-
-// Función para obtener el contenido y detalles de un correo, incluyendo HTML e imágenes embebidas
 async function getMessageDetails(gmailClient: any, messageId: string) {
   const response = await gmailClient.users.messages.get({
     userId: "me",
@@ -81,46 +10,81 @@ async function getMessageDetails(gmailClient: any, messageId: string) {
     format: "full",
   });
 
-  const payload = response.data.payload;
-  const headers = payload.headers;
-  const labelIds = response.data.labelIds || [];
+  const message = response.data;
+  const headers = message.payload.headers;
 
-  const from =
-    headers.find((header: any) => header.name === "From")?.value ||
-    "Desconocido";
-  const subject =
-    headers.find((header: any) => header.name === "Subject")?.value ||
-    "Sin Asunto";
-  const dateHeader =
-    headers.find((header: any) => header.name === "Date")?.value || null;
+  console.log("Headers:", headers);
+  console.log("Message:", message);
 
-  ;
+  const getHeader = (name: string) =>
+    headers.find(
+      (header: any) => header.name.toLowerCase() === name.toLowerCase()
+    )?.value;
 
-  const { textBody, htmlBody, inlineImages, attachments } =
-    processParts(payload);
+  let textBody = "";
+  let htmlBody = "";
+  const inlineImages: any[] = [];
+  const attachments: any[] = [];
 
-  const isUnread = labelIds.includes("UNREAD");
+  function processPartRecursive(part: any) {
+    const mimeType = part.mimeType;
+    const body = part.body;
+
+    if (mimeType === "text/plain" && body.data) {
+      textBody += Buffer.from(body.data, "base64").toString("utf-8");
+    } else if (mimeType === "text/html" && body.data) {
+      htmlBody += Buffer.from(body.data, "base64").toString("utf-8");
+    } else if (mimeType.startsWith("image/")) {
+      inlineImages.push({
+        filename: part.filename,
+        mimeType: mimeType,
+        contentId: part.headers?.find(
+          (header: any) => header.name.toLowerCase() === "content-id"
+        )?.value,
+        data: body.attachmentId || body.data,
+      });
+    } else if (part.filename && body.attachmentId) {
+      attachments.push({
+        filename: part.filename,
+        mimeType: mimeType,
+        attachmentId: body.attachmentId,
+      });
+    }
+
+    if (part.parts) {
+      part.parts.forEach(processPartRecursive);
+    }
+  }
+
+  processPartRecursive(message.payload);
+
+  console.log("Message structure:", JSON.stringify(message.payload, null, 2));
+  console.log("Processed content:");
+  console.log("Text body:", textBody.substring(0, 100) + "...");
+  console.log("HTML body:", htmlBody.substring(0, 100) + "...");
+  console.log("Inline images:", inlineImages.length);
+  console.log("Attachments:", attachments.length);
 
   return {
-    id: messageId,
-    from,
-    subject,
-    date: dateHeader,
+    id: message.id,
+    threadId: message.threadId,
+    from: getHeader("From") || "Desconocido",
+    subject: getHeader("Subject") || "Sin Asunto",
+    date: getHeader("Date"),
     textBody,
     htmlBody,
     inlineImages,
     attachments,
-    isUnread,
+    isUnread: message.labelIds.includes("UNREAD"),
   };
 }
 
-// Función para marcar un correo como leído en Gmail
 async function markMessageAsRead(gmailClient: any, messageId: string) {
   return await gmailClient.users.messages.modify({
     userId: "me",
     id: messageId,
     requestBody: {
-      removeLabelIds: ["UNREAD"], // Quitar la etiqueta "UNREAD" para marcar como leído
+      removeLabelIds: ["UNREAD"],
     },
   });
 }
@@ -130,7 +94,7 @@ export async function GET(req: Request) {
   const url = new URL(req.url);
   const userId = url.searchParams.get("userid");
   const email = url.searchParams.get("email");
-  const messageId = url.searchParams.get("messageId"); // Obtener el ID del mensaje
+  const messageId = url.searchParams.get("messageId");
 
   if (!userId || !messageId) {
     console.log(
@@ -162,20 +126,19 @@ export async function GET(req: Request) {
   let gmailClient = getGmailClient(emailAccount.access_token);
 
   try {
-    // Intentar obtener los detalles del correo usando el messageId
     let detailedMessage = await getMessageDetails(gmailClient, messageId);
 
-    // Si el correo está marcado como no leído, lo marcamos como leído
     if (detailedMessage.isUnread) {
       console.log("Marcando como leido el correo", messageId);
       await markMessageAsRead(gmailClient, messageId);
     }
 
-    // Devolver el contenido del mensaje
-    console.log("Devolver el contenido del mensaje", detailedMessage);
+    console.log(
+      "Devolver el contenido del mensaje",
+      JSON.stringify(detailedMessage, null, 2)
+    );
     return NextResponse.json({ message: detailedMessage });
   } catch (error: any) {
-    // Si es un error de autenticación (token expirado), refrescar el token
     if (error.response?.status === 401) {
       try {
         console.log("Token expirado, intentando refrescarlo");
@@ -183,30 +146,31 @@ export async function GET(req: Request) {
           emailAccount.refresh_token
         );
 
-        // Actualizar el cliente de Gmail con el nuevo access token
         if (newAccessToken) {
           console.log("Actualizando el token de acceso");
           gmailClient = getGmailClient(newAccessToken);
+          await supabase
+            .from("email_accounts")
+            .update({ access_token: newAccessToken })
+            .eq("user_id", userId)
+            .eq("email", email);
+
+          const detailedMessage = await getMessageDetails(
+            gmailClient,
+            messageId
+          );
+
+          if (detailedMessage.isUnread) {
+            console.log("Marcando como leido el correo", messageId);
+            await markMessageAsRead(gmailClient, messageId);
+          }
+
+          console.log(
+            "Devolver el contenido del mensaje",
+            JSON.stringify(detailedMessage, null, 2)
+          );
+          return NextResponse.json({ message: detailedMessage });
         }
-
-        // Guardar el nuevo access token en la base de datos
-        await supabase
-          .from("email_accounts")
-          .update({ access_token: newAccessToken })
-          .eq("user_id", userId)
-          .eq("email", email);
-
-        console.log("Refrescando el token de acceso");
-        // Reintentar obtener los detalles del mensaje después de refrescar el token
-        const detailedMessage = await getMessageDetails(gmailClient, messageId);
-
-        if (detailedMessage.isUnread) {
-          console.log("Marcando como leido el correo", messageId);
-          await markMessageAsRead(gmailClient, messageId);
-        }
-
-        console.log("Devolver el contenido del mensaje", detailedMessage);
-        return NextResponse.json({ message: detailedMessage });
       } catch (refreshError) {
         console.error("Error al refrescar el token de acceso:", refreshError);
         return NextResponse.json(

@@ -78,27 +78,7 @@ export const NavAside = ({
                     key={account.email}
                     onClick={() =>
                       router.replace(
-                        `/mailing?emailroute=${account.email}&category=Primary${
-                          params.get("f") && params.get("f") === "true"
-                            ? "&f=true"
-                            : ""
-                        }${params.get("q") ? `&q=${params.get("q")}` : ""}${
-                          params.get("date")
-                            ? `&date=${params.get("date")}`
-                            : ""
-                        }${
-                          params.get("sender")
-                            ? `&sender=${params.get("sender")}`
-                            : ""
-                        }${
-                          params.get("hasAttachment")
-                            ? `&hasAttachment=${params.get("hasAttachment")}`
-                            : ""
-                        }${
-                          params.get("isImportant")
-                            ? `&isImportant=${params.get("isImportant")}`
-                            : ""
-                        }`
+                        `/mailing?emailroute=${account.email}`
                       )
                     }
                     className={cn(

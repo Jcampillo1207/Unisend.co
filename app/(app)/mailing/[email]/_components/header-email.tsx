@@ -1,9 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, ArrowRight, Reply } from "lucide-react";
-import React, { useState } from "react";
-import { ReplyDialog } from "./dialogs/dialog-reply";
+import { Reply } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 
 export const HeaderEmail = ({
@@ -13,10 +11,8 @@ export const HeaderEmail = ({
   emailId: string;
   userId: string;
 }) => {
-  const [openReply, setOpenReply] = useState(false);
-  const param = useSearchParams().get("sender") as string;
+  const searchParams = useSearchParams();
   const router = useRouter();
-
 
   return (
     <>
@@ -26,20 +22,19 @@ export const HeaderEmail = ({
             variant={"default"}
             size={"sm"}
             className="flex items-center justify-start gap-x-1.5 rounded-lg"
-            onClick={() => setOpenReply(true)}
+            onClick={() =>
+              router.push(
+                `/mailing?emailroute=${searchParams.get(
+                  "emailroute"
+                )}&sender=${searchParams.get("sender")}&mode=reply`
+              )
+            }
           >
             Responder
             <Reply className="size-3" />
           </Button>
         </div>
       </div>
-      <ReplyDialog
-        emailSender={param}
-        open={openReply}
-        setOpen={setOpenReply}
-        emailId={emailId}
-        userId={userId}
-      />
     </>
   );
 };

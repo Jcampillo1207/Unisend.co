@@ -17,6 +17,8 @@ const EmailInput = ({ value, onChange }) => {
   const [open, setOpen] = useState(false);
   const inputRef = useRef(null);
 
+  console.log(value);
+
   const validateAndAddEmail = useCallback(
     (email) => {
       try {

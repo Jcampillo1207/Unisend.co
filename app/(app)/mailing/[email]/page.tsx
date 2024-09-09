@@ -51,7 +51,7 @@ const EmailPage = async ({
 
   const { message } = await response.json();
 
-  
+  console.log(message);
 
 
   return (

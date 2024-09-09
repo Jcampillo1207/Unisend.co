@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -17,39 +17,103 @@ import { ReactQuillEditor } from "./_components/editor/react-quill-editor";
 import { cn } from "@/lib/utils";
 import EmailInput from "./_components/editor/email-input";
 import { MoodChanger } from "./_components/editor/mood-changer";
-
-// Importar el editor de texto enriquecido dinámicamente para evitar problemas de SSR
-
-const MailingPage = ({
-  searchParams: { email_id },
-}: {
-  searchParams: { email_id: string };
-}) => {
-  const [to, setTo] = useState([]);
+import { useSearchParams } from "next/navigation";
+import { createClient } from "@/lib/supabase/client";
+import { toast } from "sonner";
+const supabase = createClient();
+const MailingPage = () => {
+  const [to, setTo] = useState<string[]>([]);
   const [cc, setCc] = useState("");
   const [bcc, setBcc] = useState("");
   const [subject, setSubject] = useState("");
   const [loading, setLoading] = useState(false);
-  const [body, setBody] = useState(""); // Controlamos el cuerpo del mensaje en el estado
+  const [body, setBody] = useState("");
   const [attachments, setAttachments] = useState<File[]>([]);
   const [mood, setMood] = useState("amigable");
+  const [userID, setUserID] = useState("");
+  const searchParams = useSearchParams();
+  const mode = searchParams.get("mode");
+  const sender = searchParams.get("sender");
+  const emailroute = searchParams.get("emailroute");
+  const [theme, setTheme] = useState<"light" | "dark">("dark");
 
-  console.log(mood);
+  console.log("Initial params:", { mode, sender, emailroute });
 
-  const handleSend = () => {
-    // Aquí iría la lógica para enviar el correo
-    const htmlBody = `<!DOCTYPE html>
-<html lang="es">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Document</title>
-</head>
-<body>
-  ${body}
-</body>
-</html>`;
-    console.log({ to, cc, bcc, subject, htmlBody, attachments });
+  const sanitizeEmail = (email: string): string => {
+    if (!email) return "";
+    const match = email.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/);
+    const result = match ? match[0] : email;
+    return result;
+  };
+
+  useEffect(() => {
+    if (mode === "reply" && sender) {
+      const sanitizedEmail = sanitizeEmail(sender);
+      setTo([sanitizedEmail]);
+    }
+  }, [mode, sender]);
+
+  useEffect(() => {
+    async function getUserID() {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      if (user) {
+        setUserID(user.id);
+      }
+    }
+
+    getUserID();
+  }, []);
+
+  const handleSend = async () => {
+    toast.loading("Enviando correo...");
+    // El cuerpo ya está en formato HTML, no necesitamos envolverlo nuevamente
+
+    console.log("Preparando para enviar correo:");
+    console.log("To:", to);
+    console.log("Subject:", subject);
+    console.log("Body:", body);
+
+    try {
+      const response = await fetch("/api/mailing/send", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          userId: userID,
+          email: searchParams.get("emailroute"),
+          to: to.join(","),
+          cc,
+          bcc,
+          subject,
+          body,
+          attachments,
+          mode: searchParams.get("mode"),
+          threadId: searchParams.get("threadId"),
+          theme,
+        }),
+      });
+
+      console.log("Respuesta del servidor:", response.status);
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error("Error del servidor:", errorData);
+        throw new Error(errorData.error || "Error al enviar el correo");
+      }
+
+      const result = await response.json();
+      console.log("Correo enviado con éxito:", result.messageId);
+      toast.dismiss();
+      toast.success("Correo enviado con éxito");
+    } catch (error) {
+      toast.dismiss();
+      console.error("Error al enviar el correo:", error);
+      toast.error("Error al enviar el correo");
+    }
   };
 
   const handleFilesAdded = useCallback((newFiles: File[]) => {
@@ -143,7 +207,6 @@ const MailingPage = ({
         const chunk = new TextDecoder().decode(value);
         accumulatedContent += chunk;
 
-        // Replace "\n" with actual line breaks and trim any excess whitespace
         const cleanedContent = accumulatedContent
           .replace(/\\n/g, "\n")
           .replace(/\s+$/, "");
@@ -151,7 +214,6 @@ const MailingPage = ({
         setBody(cleanedContent);
       }
 
-      // Final cleanup (if needed)
       const finalContent = accumulatedContent
         .replace(/\\n/g, "\n")
         .replace(/\s+$/, "");
@@ -163,8 +225,6 @@ const MailingPage = ({
       setLoading(false);
     }
   }, [body, mood]);
-
-  console.log({ body });
 
   return (
     <div className="w-full h-dvh max-h-dvh min-h-dvh flex bg-background">
@@ -219,7 +279,7 @@ const MailingPage = ({
           <div className="flex flex-col gap-y-2 pb-4">
             <div className="flex flex-col gap-y-1.5 px-4">
               <Label htmlFor="to">Para</Label>
-              <EmailInput value={to} onChange={setTo} />
+              <EmailInput value={to} onChange={setTo} key={to.join(",")} />
             </div>
             <div className="flex flex-col gap-y-1.5 px-4 w-full">
               <Label htmlFor="subject">Asunto</Label>
