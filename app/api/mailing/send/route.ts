@@ -169,7 +169,7 @@ function createEmailMessage(
   htmlBody: string,
   attachments: any[]
 ) {
-  var email =
+  let email =
     "From: 'me'\r\n" +
     "To: " +
     to +
