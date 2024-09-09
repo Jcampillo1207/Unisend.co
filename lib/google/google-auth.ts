@@ -4,7 +4,7 @@ import { google } from "googleapis";
 const oAuth2Client = new google.auth.OAuth2(
   process.env.GMAIL_CLIENT_ID,
   process.env.GMAIL_CLIENT_SECRET,
-  "http://localhost:3000/api/auth/callback/google" // URL de redirección para tu app
+  "https://unisend.co/api/auth/callback/google" // URL de redirección para tu app
 );
 
 export function getAuthUrl(userId: string) {
