@@ -35,7 +35,7 @@ const MailingPage = () => {
   const mode = searchParams.get("mode");
   const sender = searchParams.get("sender");
   const emailroute = searchParams.get("emailroute");
-  const [theme, setTheme] = useState<"light" | "dark">("dark");
+  const [theme, setTheme] = useState<"light" | "dark" | "simple">("simple");
 
   console.log("Initial params:", { mode, sender, emailroute });
 

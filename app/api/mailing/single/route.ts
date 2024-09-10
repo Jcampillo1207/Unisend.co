@@ -58,12 +58,35 @@ async function getMessageDetails(gmailClient: any, messageId: string) {
 
   processPartRecursive(message.payload);
 
+  async function getAttachmentData(attachmentId: string) {
+    const attachment = await gmailClient.users.messages.attachments.get({
+      userId: "me",
+      messageId: messageId,
+      id: attachmentId,
+    });
+    return attachment.data.data;
+  }
+
+  for (let image of inlineImages) {
+    if (image.data) {
+      image.data = await getAttachmentData(image.data);
+    }
+  }
+
+  // Modificar el HTML para reemplazar los Content-IDs con datos base64
+  for (let image of inlineImages) {
+    const cid = `cid:${image.contentId.replace(/[<>]/g, "")}`;
+    const base64Data = `data:${image.mimeType};base64,${image.data}`;
+    htmlBody = htmlBody.replace(new RegExp(cid, "g"), base64Data);
+  }
+
   console.log("Message structure:", JSON.stringify(message.payload, null, 2));
   console.log("Processed content:");
   console.log("Text body:", textBody.substring(0, 100) + "...");
   console.log("HTML body:", htmlBody.substring(0, 100) + "...");
   console.log("Inline images:", inlineImages.length);
   console.log("Attachments:", attachments.length);
+  console.log("Attachments:", attachments);
 
   return {
     id: message.id,
@@ -74,7 +97,12 @@ async function getMessageDetails(gmailClient: any, messageId: string) {
     textBody,
     htmlBody,
     inlineImages,
-    attachments,
+    attachments: attachments.map((att) => ({
+      filename: att.filename,
+      mimeType: att.mimeType,
+      size: att.size,
+      data: att.data,
+    })),
     isUnread: message.labelIds.includes("UNREAD"),
   };
 }
@@ -133,15 +161,10 @@ export async function GET(req: Request) {
       await markMessageAsRead(gmailClient, messageId);
     }
 
-    console.log(
-      "Devolver el contenido del mensaje",
-      JSON.stringify(detailedMessage, null, 2)
-    );
     return NextResponse.json({ message: detailedMessage });
   } catch (error: any) {
     if (error.response?.status === 401) {
       try {
-        console.log("Token expirado, intentando refrescarlo");
         const newAccessToken = await refreshAccessToken(
           emailAccount.refresh_token
         );
@@ -165,10 +188,6 @@ export async function GET(req: Request) {
             await markMessageAsRead(gmailClient, messageId);
           }
 
-          console.log(
-            "Devolver el contenido del mensaje",
-            JSON.stringify(detailedMessage, null, 2)
-          );
           return NextResponse.json({ message: detailedMessage });
         }
       } catch (refreshError) {

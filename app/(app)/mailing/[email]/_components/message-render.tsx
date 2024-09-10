@@ -127,19 +127,69 @@ const EmailRenderer = ({ emailData }) => {
     ));
   };
 
+  const handleAttachmentDownload = (e, attachment) => {
+    e.preventDefault();
+    try {
+      // Verificar si los datos ya están decodificados
+      const decodedData = attachment.data.startsWith("data:")
+        ? attachment.data.split(",")[1]
+        : attachment.data;
+
+      const byteCharacters = atob(decodedData);
+      const byteNumbers = new Array(byteCharacters.length);
+      for (let i = 0; i < byteCharacters.length; i++) {
+        byteNumbers[i] = byteCharacters.charCodeAt(i);
+      }
+      const byteArray = new Uint8Array(byteNumbers);
+      const blob = new Blob([byteArray], { type: attachment.mimeType });
+      const link = document.createElement("a");
+      link.href = window.URL.createObjectURL(blob);
+      link.download = attachment.filename;
+      link.click();
+      window.URL.revokeObjectURL(link.href);
+    } catch (error) {
+      console.error("Error al descargar el adjunto:", error);
+      alert(
+        "Hubo un problema al descargar el adjunto. Por favor, inténtelo de nuevo."
+      );
+    }
+  };
+
   const renderAttachments = () => {
     return emailData.attachments.map((attachment, index) => (
-      <div key={index} className="">
+      <div key={index} className="flex items-center space-x-2 mb-2">
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          className="h-5 w-5 text-gray-400"
+          viewBox="0 0 20 20"
+          fill="currentColor"
+        >
+          <path
+            fillRule="evenodd"
+            d="M8 4a3 3 0 00-3 3v4a5 5 0 0010 0V7a1 1 0 112 0v4a7 7 0 11-14 0V7a5 5 0 0110 0v4a3 3 0 11-6 0V7a1 1 0 012 0v4a1 1 0 102 0V7a3 3 0 00-3-3z"
+            clipRule="evenodd"
+          />
+        </svg>
         <a
-          href={`/api/attachment/${attachment.id}`}
-          target="_blank"
-          rel="noopener noreferrer"
+          href="#"
+          onClick={(e) => handleAttachmentDownload(e, attachment)}
           className="text-blue-500 hover:underline"
         >
           {attachment.filename}
         </a>
+        <span className="text-sm text-gray-500">
+          ({formatFileSize(attachment.size)})
+        </span>
       </div>
     ));
+  };
+
+  const formatFileSize = (bytes) => {
+    if (bytes === 0) return "0 Bytes";
+    const k = 1024;
+    const sizes = ["Bytes", "KB", "MB", "GB", "TB"];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
   };
 
   console.log(iframeWidth);
@@ -163,18 +213,18 @@ const EmailRenderer = ({ emailData }) => {
     <div className="w-full flex-1">
       <div
         ref={headerRef}
-        className="w-full bg-muted/60 border-b p-5 md:px-7"
+        className="w-full bg-muted/60 border-b px-5 md:px-7 py-5"
         id="email-header"
       >
         <h2 className="text-2xl font-bold">{emailData.subject}</h2>
         <p className="text-sm text-muted-foreground">{emailData.from}</p>
-        <p className="text-xs text-muted-foreground italic">
+        <p className="text-sm text-muted-foreground">
           {formatEmailDate(emailData.date)}
         </p>
       </div>
 
       <div
-        className="w-full flex-1 mx-auto p-5 md:px-7"
+        className="w-full flex-1 mx-auto px-5 md:px-7"
         id="email-content"
         style={{
           backgroundColor: backgroundColor,
@@ -204,8 +254,8 @@ const EmailRenderer = ({ emailData }) => {
       </div>
 
       {emailData.attachments && emailData.attachments.length > 0 && (
-        <div className="email-attachments p-5">
-          <h3 className="text-lg font-semibold mb-2">Attachments:</h3>
+        <div className="email-attachments p-5 bg-gray-50">
+          <h3 className="text-lg font-semibold mb-2">Adjuntos:</h3>
           {renderAttachments()}
         </div>
       )}

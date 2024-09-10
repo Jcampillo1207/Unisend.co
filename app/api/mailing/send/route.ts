@@ -2,7 +2,6 @@ import { NextResponse } from "next/server";
 import { getGmailClient } from "@/lib/gmail-client";
 import { createAdminClient } from "@/lib/supabase/server-role";
 import { refreshAccessToken } from "@/lib/refrsh-access-token";
-import quotedPrintable from "quoted-printable";
 
 export async function POST(req: Request) {
   console.log("Iniciando proceso de envío de correo");
@@ -19,6 +18,7 @@ export async function POST(req: Request) {
     mode,
     threadId,
     theme,
+    promo,
   } = await req.json();
 
   console.log("Recibido en el servidor:");
@@ -169,17 +169,23 @@ function createEmailMessage(
   htmlBody: string,
   attachments: any[]
 ) {
+  // Codificar el subject en UTF-8 y luego en base64
+  const encodedSubject =
+    "=?UTF-8?B?" + Buffer.from(subject).toString("base64") + "?=";
+
   let email =
     "From: 'me'\r\n" +
     "To: " +
     to +
     "\r\n" +
+    (cc ? "Cc: " + cc + "\r\n" : "") +
+    (bcc ? "Bcc: " + bcc + "\r\n" : "") +
     "Subject: " +
-    subject +
+    encodedSubject +
     "\r\n" +
-    "Content-Type: text/html; charset='UTF-8'\r\n" +
+    "Content-Type: text/html; charset=UTF-8\r\n" +
     "Content-Transfer-Encoding: base64\r\n\r\n" +
-    htmlBody;
+    Buffer.from(htmlBody).toString("base64");
 
   return Buffer.from(email)
     .toString("base64")
@@ -193,41 +199,51 @@ function decodeMessage(encodedMessage: string): string {
 }
 
 function wrapHtmlBody(body: string, theme: "light" | "dark"): string {
-  // Definir estilos inline para cada tema
+  // Definir estilos para cada tema
   const styles = {
     light: {
-      body: `
-        background-color: #ffffff;
-        color: #000000;
-        font-family: 'Inter', sans-serif;
-        padding: 20px;
-        height: fit-content;
-        overflow: hidden;
-      `,
-      a: `
-        color: #1a73e8;
-      `,
+      backgroundColor: "transparent",
+      textColor: "#0a0a0a",
+      linkColor: "#780CFF",
     },
     dark: {
-      body: `
-        background-color: #121212;
-        color: #ffffff;
-        font-family: 'Inter', sans-serif;
-        padding: 20px;
-        height: fit-content;
-        overflow: hidden;
-      `,
-      a: `
-        color: #8ab4f8;
-      `,
+      backgroundColor: "#0a0a0a",
+      textColor: "#ffffff",
+      linkColor: "#780CFF",
     },
+    simple: {
+      backgroundColor: "transparent",
+      textColor: "#0a0a0a",
+      linkColor: "#0C18FF",
+    }
   };
 
   // Seleccionar el estilo según el tema
   const selectedStyles = styles[theme] || styles.light; // Tema claro por defecto
 
-  // Generar el HTML envolviendo el cuerpo con estilos inline
-  if (!body.toLowerCase().includes("<html")) {
+  // Estilos comunes
+  const commonStyles = `
+    font-family: Arial, sans-serif;
+    line-height: 1.6;
+    margin: 0;
+    padding: 0;
+  `;
+
+  // Limpiar el cuerpo del email
+  const cleanBody = body
+    .replace(/<p><br\s*\/?><\/p>/gi, "<br />")
+    .replace(/<p>\s*<\/p>/gi, "")
+    .replace(/(<br\s*\/?>\s*){3,}/gi, "<br /><br />");
+
+  // Función para aplicar estilos a los enlaces
+  const styleLinks = (html: string) =>
+    html.replace(
+      /<a\s/g,
+      `<a style="color: ${selectedStyles.linkColor}; text-decoration: underline;" `
+    );
+
+  // Generar el HTML envolviendo el cuerpo con una estructura de tabla
+  if (!cleanBody.toLowerCase().includes("<html")) {
     return `
 <!DOCTYPE html>
 <html>
@@ -235,11 +251,67 @@ function wrapHtmlBody(body: string, theme: "light" | "dark"): string {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
   </head>
-  <body style="${selectedStyles.body}">
-    ${body.replace(/<a /g, `<a style="${selectedStyles.a}" `)}
+  <body>
+    <table width="100%" cellpadding="0" cellspacing="0" border="0">
+      <tbody>
+      <tr>
+        <td align="center" valign="top">
+          <table max-width="600px" cellpadding="0" cellspacing="0" style="
+            ${commonStyles}
+            background-color: ${selectedStyles.backgroundColor};
+            color: ${selectedStyles.textColor};
+            padding: 20px;
+            border: 0px solid #e0e0e0;
+            width: 100%;
+            max-width: 600px;
+            height: fit-content;
+          ">
+            <tr>
+              <td style="padding-bottom: 20px;">
+                ${styleLinks(cleanBody)}
+              </td>
+            </tr>
+            <tr>
+              <td align="center" valign="center" style="padding-top: 10px; padding-bottom: 10px; text-align: center; font-size: 12px !important; line-height: 1.6; color: #4d4d4d; font-family: Arial, sans-serif; border-top: 1px solid #e0e0e0;">
+                <p style="${commonStyles}">
+                  Este mensaje fue enviado desde <a href="https://unisend.co">Unisend.co</a>.
+                </p>
+              </td>
+          </table>
+        </td>
+      </tr>
+      </tbody>
+    </table>
   </body>
 </html>
     `.trim();
+  } else {
+    // Si ya existe una estructura HTML, insertamos nuestra tabla dentro del body existente
+    return cleanBody
+      .replace(
+        /<body[^>]*>/,
+        `<body>
+        <table width="100%" cellpadding="0" cellspacing="0" border="0">
+          <tr>
+            <td align="center" valign="top">
+               <table width="100%" height="fit-content" max-width="600px" cellpadding="0" cellspacing="0" border="0" style="
+                ${commonStyles}
+                background-color: ${selectedStyles.backgroundColor};
+                color: ${selectedStyles.textColor};
+              ">
+                <tr>
+                  <td style="padding: 20px;">`
+      )
+      .replace(
+        "</body>",
+        `
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+        </table>
+      </body>`
+      );
   }
-  return body;
 }

@@ -36,6 +36,7 @@
     "framer-motion": "^11.5.4",
     "googleapis": "^144.0.0",
     "html-react-parser": "^5.1.15",
+    "iframe-resizer-react": "^5.1.5",
     "js-base64": "^3.7.7",
     "lucide-react": "^0.439.0",
     "next": "14.2.8",

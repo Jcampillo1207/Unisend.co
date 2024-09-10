@@ -229,7 +229,7 @@ export const AsideMailing = ({ user_id }: { user_id: string }) => {
                 "px-4 py-2.5 border-t hover:bg-muted cursor-pointer transition-all flex gap-x-2.5 snap-end",
                 key === 0 && "border-t-0",
                 email.isUnread && "bg-muted/50",
-                activePath == email.id && "bg-primary/30 hover:bg-primary/40"
+                activePath == email.id && "dark:bg-primary/30 dark:hover:bg-primary/40 bg-primary/10 hover:bg-primary/20"
               )}
             >
               <div
@@ -274,7 +274,9 @@ export const AsideMailing = ({ user_id }: { user_id: string }) => {
                     activePath == email.id && "text-foreground"
                   )}
                 >
-                  <Label className="cursor-pointe italic text-xs">{formatEmailDate(email.date)}</Label>
+                  <Label className="cursor-pointe italic text-xs">
+                    {formatEmailDate(email.date)}
+                  </Label>
                 </span>
               </div>
             </div>
