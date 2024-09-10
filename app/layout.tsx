@@ -4,6 +4,7 @@ import "./globals.css";
 import { Toaster } from "@/components/ui/sonner";
 import { Ban, CheckCircle, Info, Loader2, TriangleAlert } from "lucide-react";
 import { ThemeProvider } from "@/components/theme-provider";
+import GoogleAdsense from "./_components/adsense";
 
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
@@ -52,6 +53,7 @@ export default function RootLayout({
             position="top-right"
           />
         </ThemeProvider>
+        <GoogleAdsense pId="1896579303376104"/>
       </body>
     </html>
   );
