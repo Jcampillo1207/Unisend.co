@@ -247,31 +247,6 @@ const MailingPage = () => {
                   Guardar borrador
                 </TooltipContent>
               </Tooltip>
-              {body && (
-                <Tooltip delayDuration={300}>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      disabled={loading}
-                      onClick={handleAIWrite}
-                      className={cn(
-                        "text-primary/50 hover:text-foreground",
-                        body &&
-                          "text-primary bg-primary/20 hover:bg-primary/30 hover:text-primary"
-                      )}
-                    >
-                      <Sparkles className="size-3.5" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent className="bg-muted border">
-                    Mejorar con{" "}
-                    <span className="text-[#FF51D9] font-medium">
-                      Unisend AI
-                    </span>
-                  </TooltipContent>
-                </Tooltip>
-              )}
             </TooltipProvider>
           </div>
         </div>
@@ -294,11 +269,41 @@ const MailingPage = () => {
           </div>
           <div className="flex-1 h-fit gap-y-1.5 flex flex-col">
             <div className="flex-1 bg-background px-4 py-2 border-y relative">
-              {body && <MoodChanger onMoodChange={handleMoodChange} />}
+              {body && (
+                <div className="absolute right-4 top-2 w-fit items-center justify-end flex gap-x-0.5">
+                  <TooltipProvider>
+                    <Tooltip delayDuration={300}>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          disabled={loading}
+                          onClick={handleAIWrite}
+                          className={cn(
+                            "text-primary/50 hover:text-foreground",
+                            body &&
+                              "text-primary bg-primary/20 hover:bg-primary/30 hover:text-primary"
+                          )}
+                        >
+                          <Sparkles className="size-3.5" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent side="top" sideOffset={5} className="bg-muted border">
+                        Mejorar con{" "}
+                        <span className="text-[#FF51D9] font-medium">
+                          Unisend AI
+                        </span>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                  <MoodChanger onMoodChange={handleMoodChange} />{" "}
+                </div>
+              )}
+
               <ReactQuillEditor value={body} onChange={setBody} />
             </div>
           </div>
-          <div className="flex justify-end items-center px-4 h-14 border-t sticky bottom-0 left-0 z-30 bg-[#111111]">
+          <div className="flex justify-end items-center px-4 h-14 border-t sticky bottom-0 left-0 z-30 bg-[#fafafa] dark:bg-[#111111]">
             <Button onClick={handleSend}>
               <SendIcon className="mr-2 h-4 w-4" /> Enviar
             </Button>

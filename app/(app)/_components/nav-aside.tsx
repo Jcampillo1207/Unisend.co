@@ -35,6 +35,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { ModeToggle } from "@/components/mode-toggle";
 
 const supabase = createClient();
 
@@ -77,9 +78,7 @@ export const NavAside = ({
                   <DropdownMenuItem
                     key={account.email}
                     onClick={() =>
-                      router.replace(
-                        `/mailing?emailroute=${account.email}`
-                      )
+                      router.replace(`/mailing?emailroute=${account.email}`)
                     }
                     className={cn(
                       "gap-x-1.5 text-muted-foreground",
@@ -124,7 +123,7 @@ export const NavAside = ({
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
-      <div className="w-full flex flex-col gap-y-1.5 items-center">
+      <div className="w-full flex flex-col gap-y-1.5 items-center flex-1">
         <TooltipProvider>
           <Tooltip delayDuration={300}>
             <TooltipTrigger asChild>
@@ -413,6 +412,9 @@ export const NavAside = ({
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>
+      </div>
+      <div className="h-14 items-center justify-center flex border-t shrink-0 w-full">
+        <ModeToggle />
       </div>
     </aside>
   );

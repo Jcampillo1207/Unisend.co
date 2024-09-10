@@ -193,40 +193,40 @@ function decodeMessage(encodedMessage: string): string {
 }
 
 function wrapHtmlBody(body: string, theme: "light" | "dark"): string {
-  // Definir estilos para cada tema, usando "Inter" como fuente principal
+  // Definir estilos inline para cada tema
   const styles = {
-    light: `
-      body {
+    light: {
+      body: `
         background-color: #ffffff;
         color: #000000;
         font-family: 'Inter', sans-serif;
         padding: 20px;
         height: fit-content;
         overflow: hidden;
-      }
-      a {
+      `,
+      a: `
         color: #1a73e8;
-      }
-    `,
-    dark: `
-      body {
+      `,
+    },
+    dark: {
+      body: `
         background-color: #121212;
         color: #ffffff;
         font-family: 'Inter', sans-serif;
         padding: 20px;
         height: fit-content;
         overflow: hidden;
-      }
-      a {
+      `,
+      a: `
         color: #8ab4f8;
-      }
-    `,
+      `,
+    },
   };
 
   // Seleccionar el estilo según el tema
-  const selectedStyle = styles[theme] || styles.light; // Default to light theme if none provided
+  const selectedStyles = styles[theme] || styles.light; // Tema claro por defecto
 
-  // Generar el HTML envolviendo el cuerpo con los estilos inline
+  // Generar el HTML envolviendo el cuerpo con estilos inline
   if (!body.toLowerCase().includes("<html")) {
     return `
 <!DOCTYPE html>
@@ -234,12 +234,9 @@ function wrapHtmlBody(body: string, theme: "light" | "dark"): string {
   <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <style>
-      ${selectedStyle}
-    </style>
   </head>
-  <body>
-    ${body}
+  <body style="${selectedStyles.body}">
+    ${body.replace(/<a /g, `<a style="${selectedStyles.a}" `)}
   </body>
 </html>
     `.trim();
