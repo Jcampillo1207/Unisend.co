@@ -17,6 +17,7 @@ export const HeaderEmail = ({
   return (
     <>
       <div className="w-full h-14 items-center justify-between flex px-4 border-b bg-background shrink-0 min-h-14 sticky top-0 left-0 z-10">
+         <h1 className="text-base font-semibold">Mensaje</h1>
         <div className="w-fit h-full items-center justify-center flex gap-x-1.5">
           <Button
             variant={"default"}

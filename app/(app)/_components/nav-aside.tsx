@@ -25,6 +25,7 @@ import {
   Logs,
   MailWarning,
   Megaphone,
+  Plus,
   Settings,
   Speech,
 } from "lucide-react";
@@ -52,6 +53,8 @@ export const NavAside = ({
   const activeAccount = accounts.find(
     (account) => account.email === params.get("emailroute")
   );
+
+  console.log("Active account:", activeAccount);
 
   return (
     <aside className="w-fit shrink-0 items-start justify-start border-r h-full flex flex-col gap-y-1.5">
@@ -413,8 +416,33 @@ export const NavAside = ({
           </Tooltip>
         </TooltipProvider>
       </div>
-      <div className="h-14 items-center justify-center flex border-t shrink-0 w-full">
-        <ModeToggle />
+      <div className="h-fit items-center justify-center flex shrink-0 w-full flex-col">
+        <div className="w-full border-t flex items-center justify-center py-1.5">
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="default"
+                  size="icon"
+                  onClick={() => router.push(`/mailing?emailroute=${activeAccount.email}`)}
+                >
+                  <Plus className="size-3.5" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent
+                side="right"
+                sideOffset={5}
+                align="center"
+                className="text-white"
+              >
+                Nuevo correo
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        </div>
+        <div className="w-full border-t pt-1.5 pb-3 flex items-center justify-center">
+          <ModeToggle />
+        </div>
       </div>
     </aside>
   );

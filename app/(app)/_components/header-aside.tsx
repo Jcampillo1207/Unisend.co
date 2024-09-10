@@ -5,9 +5,21 @@ import { LogoMailBase } from "@/components/ui/vector/logos";
 import { ArrowLeft, ArrowRight, RefreshCcw } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 
 export const HeaderAside = () => {
   const router = useRouter();
+  const [aside, setAside] = useState(false);
+
+  useEffect(() => {
+    const localStorageAside = localStorage.getItem("aside");
+    if (localStorageAside && localStorageAside === "true") {
+      setAside(true);
+    }
+  }, [aside]);
+
+  console.log(aside);
+
   return (
     <header className="w-full h-14 min-h-14 shrink-0 items-center justify-between flex border-b px-5 sticky top-0 left-0 z-20 bg-background">
       <div className="w-fit h-full items-center justify-start flex gapx-1">
